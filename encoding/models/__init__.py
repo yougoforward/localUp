@@ -6,6 +6,8 @@ from .encnet import *
 from .fcn import *
 from .psp import *
 from .deeplabv3 import *
+from .deeplabv3plus import*
+
 from .up_fcn import *
 from .up_psp import *
 from .up_deeplabv3 import *
