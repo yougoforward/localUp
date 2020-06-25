@@ -11,6 +11,7 @@ from .deeplabv3plus import*
 from .up_fcn import *
 from .up_psp import *
 from .up_deeplabv3 import *
+from .up_fcn_3x3_s16 import *
 
 from .up_fcn_3x3_s8 import *
 from .up_fcn_5x5_s8 import *
@@ -31,6 +32,7 @@ def get_segmentation_model(name, **kwargs):
         'up_psp': get_up_psp,
         'up_deeplabv3': get_up_deeplabv3,
         'up_fcn_3x3_s8': get_up_fcn_3x3_s8,
+        'up_fcn_3x3_s16': get_up_fcn_3x3_s16,
         'up_fcn_5x5_s8': get_up_fcn_5x5_s8,
         'up_fcn_5x5_s4': get_up_fcn_5x5_s4,
         'up_fcn_com':get_up_fcn_com,
