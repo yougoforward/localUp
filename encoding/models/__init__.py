@@ -15,6 +15,7 @@ from .up_deeplabv3 import *
 from .up_fcn_3x3_s8 import *
 from .up_fcn_5x5_s8 import *
 from .up_fcn_5x5_s4 import *
+from .up_fcn_com import *
 
 def get_segmentation_model(name, **kwargs):
     from .fcn import get_fcn
@@ -31,6 +32,7 @@ def get_segmentation_model(name, **kwargs):
         'up_fcn_3x3_s8': get_up_fcn_3x3_s8,
         'up_fcn_5x5_s8': get_up_fcn_5x5_s8,
         'up_fcn_5x5_s4': get_up_fcn_5x5_s4,
+        'up_fcn_com':get_up_fcn_com,
 
     }
     return models[name.lower()](**kwargs)
