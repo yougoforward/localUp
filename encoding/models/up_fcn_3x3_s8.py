@@ -13,7 +13,7 @@ from .fcn import FCNHead
 
 from .base import BaseNet
 
-__all__ = ['up_fcn_3x3_s8', 'get_up_fcn_3x3_s8', 'get_up_fcn_3x3_s8_resnet50_pcontext', 'get_up_fcn_3x3_s8_resnet50_ade']
+__all__ = ['up_fcn_3x3_s8', 'get_up_fcn_3x3_s8']
 
 class up_fcn_3x3_s8(BaseNet):
     def __init__(self, nclass, backbone, aux=True, se_loss=False, norm_layer=nn.BatchNorm2d, **kwargs):
