@@ -13,12 +13,12 @@ from .fcn import FCNHead
 
 from .base import BaseNet
 
-__all__ = ['up_fcn', 'get_up_fcn', 'get_up_fcn_resnet50_pcontext', 'get_up_fcn_resnet50_ade']
+__all__ = ['up_fcn_5x5_s4', 'get_up_fcn_5x5_s4', 'get_up_fcn_5x5_s4_resnet50_pcontext', 'get_up_fcn_5x5_s4_resnet50_ade']
 
-class up_fcn(BaseNet):
+class up_fcn_5x5_s4(BaseNet):
     def __init__(self, nclass, backbone, aux=True, se_loss=False, norm_layer=nn.BatchNorm2d, **kwargs):
-        super(up_fcn, self).__init__(nclass, backbone, aux, se_loss, norm_layer=norm_layer, **kwargs)
-        self.head = up_fcnHead(2048, nclass, norm_layer, self._up_kwargs)
+        super(up_fcn_5x5_s4, self).__init__(nclass, backbone, aux, se_loss, norm_layer=norm_layer, **kwargs)
+        self.head = up_fcn_5x5_s4Head(2048, nclass, norm_layer, self._up_kwargs)
         if aux:
             self.auxlayer = FCNHead(1024, nclass, norm_layer)
 
@@ -37,9 +37,9 @@ class up_fcn(BaseNet):
         return tuple(outputs)
 
         
-class up_fcnHead(nn.Module):
+class up_fcn_5x5_s4Head(nn.Module):
     def __init__(self, in_channels, out_channels, norm_layer, up_kwargs):
-        super(up_fcnHead, self).__init__()
+        super(up_fcn_5x5_s4Head, self).__init__()
         inter_channels = in_channels // 4
         self.conv5 = nn.Sequential(nn.Conv2d(in_channels, inter_channels, 3, padding=1, bias=False),
                                    norm_layer(inter_channels),
@@ -85,21 +85,21 @@ class localUp(nn.Module):
         c2 = interpolate(c2, (h,w), **self._up_kwargs)
         c2 = self.refine2(c2)
 
-        unfold_up_c2 = unfold(c2, 3, 1, 1, 1).view(n, -1, 3*3, h*w)
+        unfold_up_c2 = unfold(c2, 5, 1, 2, 1).view(n, -1, 3*3, h*w)
         # torch.nn.functional.unfold(input, kernel_size, dilation=1, padding=0, stride=1)
         energy = torch.matmul(c1.view(n, -1, 1, h*w).permute(0,3,2,1), unfold_up_c2.permute(0,3,1,2)) #n,h*w,1,3x3
         att = torch.softmax(energy, dim=-1)
         out = interpolate(out, (h,w), **self._up_kwargs)
-        unfold_out = unfold(out, 3, 1, 1, 1).view(n, -1, 3*3, h*w)
+        unfold_out = unfold(out, 5, 1, 2, 1).view(n, -1, 3*3, h*w)
         out = torch.matmul(att, unfold_out.permute(0,3,2,1)).permute(0,3,2,1).view(n,-1,h,w)
 
         return out
 
 
-def get_up_fcn(dataset='pascal_voc', backbone='resnet50', pretrained=False,
+def get_up_fcn_5x5_s4(dataset='pascal_voc', backbone='resnet50', pretrained=False,
             root='~/.encoding/models', **kwargs):
-    r"""up_fcn model from the paper `"Fully Convolutional Network for semantic segmentation"
-    <https://people.eecs.berkeley.edu/~jonlong/long_shelhamer_up_fcn.pdf>`_
+    r"""up_fcn_5x5_s4 model from the paper `"Fully Convolutional Network for semantic segmentation"
+    <https://people.eecs.berkeley.edu/~jonlong/long_shelhamer_up_fcn_5x5_s4.pdf>`_
     Parameters
     ----------
     dataset : str, default pascal_voc
@@ -110,7 +110,7 @@ def get_up_fcn(dataset='pascal_voc', backbone='resnet50', pretrained=False,
         Location for keeping the model parameters.
     Examples
     --------
-    >>> model = get_up_fcn(dataset='pascal_voc', backbone='resnet50', pretrained=False)
+    >>> model = get_up_fcn_5x5_s4(dataset='pascal_voc', backbone='resnet50', pretrained=False)
     >>> print(model)
     """
     acronyms = {
@@ -121,11 +121,11 @@ def get_up_fcn(dataset='pascal_voc', backbone='resnet50', pretrained=False,
     }
     # infer number of classes
     from ..datasets import datasets
-    model = up_fcn(datasets[dataset.lower()].NUM_CLASS, backbone=backbone, root=root, **kwargs)
+    model = up_fcn_5x5_s4(datasets[dataset.lower()].NUM_CLASS, backbone=backbone, root=root, **kwargs)
     if pretrained:
         from .model_store import get_model_file
         model.load_state_dict(torch.load(
-            get_model_file('up_fcn_%s_%s'%(backbone, acronyms[dataset]), root=root)))
+            get_model_file('up_fcn_5x5_s4_%s_%s'%(backbone, acronyms[dataset]), root=root)))
     return model
 
 
