@@ -46,7 +46,7 @@ class FCN(BaseNet):
 
     def forward(self, x):
         imsize = x.size()[2:]
-        _, _, c3, c4 = self.base_forward(x)
+        c1, c2, c3, c4, c20, c30, c40 = self.base_forward(x)
 
         x = self.head(c4)
         x = interpolate(x, imsize, **self._up_kwargs)
