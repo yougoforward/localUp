@@ -19,7 +19,7 @@ class Blur2Segmentation(BaseDataset):
         super(Blur2Segmentation, self).__init__(root, split, mode, transform,
                                               target_transform, **kwargs)
         _voc_root = os.path.join(self.root, self.BASE_DIR)
-        _mask_dir = os.path.join(_voc_root, 'gt')
+        _mask_dir = os.path.join(_voc_root, 'bin_label')
         _image_dir = os.path.join(_voc_root, 'image')
         # train/val/test splits are pre-cut
         _splits_dir = os.path.join(_voc_root, 'splits')
