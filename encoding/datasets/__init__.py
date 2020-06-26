@@ -7,6 +7,7 @@ from .pcontext import ContextSegmentation
 from .cityscapes import CitySegmentation
 # from .pcontext60 import ContextSegmentation
 from .cocostuff import CocostuffSegmentation
+from .focus_shi import Blur2Segmentation
 
 datasets = {
     'coco': COCOSegmentation,
@@ -16,6 +17,7 @@ datasets = {
     'pcontext': ContextSegmentation,
     'cityscapes': CitySegmentation,
     'cocostuff': CocostuffSegmentation,
+    'focus_shi': Blur2Segmentation,
 }
 
 def get_segmentation_dataset(name, **kwargs):

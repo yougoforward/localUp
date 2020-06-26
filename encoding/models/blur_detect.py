@@ -49,7 +49,7 @@ class blur_detectHead(nn.Module):
         self.conv6 = nn.Sequential(nn.Dropout2d(0.1, False),
                                    nn.Conv2d(inter_channels*2, out_channels, 1))
 
-        self.localUp2=localUp(256, 512, norm_layer, up_kwargs)
+        # self.localUp2=localUp(256, 512, norm_layer, up_kwargs)
         self.localUp3=localUp(512, 1024, norm_layer, up_kwargs)
         self.localUp4=localUp(1024, 2048, norm_layer, up_kwargs)
 
@@ -78,12 +78,6 @@ class localUp(nn.Module):
     def __init__(self, in_channels1, in_channels2, norm_layer, up_kwargs):
         super(localUp, self).__init__()
         self.key_dim = in_channels1//8
-        # self.refine = nn.Sequential(nn.Conv2d(256, 64, 3, padding=2, dilation=2, bias=False),
-        #                            norm_layer(64),
-        #                            nn.ReLU(),
-        #                            nn.Conv2d(64, 64, 3, padding=2, dilation=2, bias=False),
-        #                            norm_layer(64),
-        #                            nn.ReLU())
         self.refine = nn.Sequential(nn.Conv2d(in_channels1, self.key_dim, 1, padding=0, dilation=1, bias=False),
                                    norm_layer(in_channels1//8),
                                    nn.ReLU())
@@ -91,7 +85,6 @@ class localUp(nn.Module):
                                    norm_layer(in_channels1//8),
                                    nn.ReLU()) 
         self._up_kwargs = up_kwargs
-
 
 
     def forward(self, c1,c2,out):

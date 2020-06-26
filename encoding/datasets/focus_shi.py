@@ -1,68 +1,72 @@
-###########################################################################
-# Created by: Hang Zhang 
-# Email: zhang.hang@rutgers.edu 
-# Copyright (c) 2017
-###########################################################################
-
-import random
+import os
 import numpy as np
-import cv2
+
 import torch
-import torch.utils.data as data
-import numpy
-from PIL import Image, ImageOps, ImageFilter
 
-__all__ = ['BaseDataset', 'test_batchify_fn']
+from PIL import Image
+from tqdm import tqdm
 
-class BaseDataset(data.Dataset):
-    def __init__(self, root, split, mode=None, transform=None, 
-                 target_transform=None, base_size=520, crop_size=480):
-        self.root = root
-        self.transform = transform
-        self.target_transform = target_transform
-        self.split = split
-        self.mode = mode if mode is not None else split
-        self.base_size = base_size
-        self.crop_size = crop_size
-        if self.mode == 'train':
-            print('BaseDataset: base_size {}, crop_size {}'. \
-                format(base_size, crop_size))
+from .base import BaseDataset
+
+class Blur2Segmentation(BaseDataset):
+    CLASSES = [
+        'background', 'blur'
+    ]
+    NUM_CLASS = 2
+    BASE_DIR = 'focus_shi'
+    def __init__(self, root=os.path.expanduser('./datasets'), split='train',
+                 mode=None, transform=None, target_transform=None, **kwargs):
+        super(Blur2Segmentation, self).__init__(root, split, mode, transform,
+                                              target_transform, **kwargs)
+        _voc_root = os.path.join(self.root, self.BASE_DIR)
+        _mask_dir = os.path.join(_voc_root, 'gt')
+        _image_dir = os.path.join(_voc_root, 'image')
+        # train/val/test splits are pre-cut
+        _splits_dir = os.path.join(_voc_root, 'splits')
+        if self.split == 'train':
+            _split_f = os.path.join(_splits_dir, 'train.txt')
+        elif self.split == 'val':
+            _split_f = os.path.join(_splits_dir, 'val.txt')
+        elif self.split == 'test':
+            _split_f = os.path.join(_splits_dir, 'test.txt')
+        else:
+            raise RuntimeError('Unknown dataset split.')
+        self.images = []
+        self.masks = []
+        with open(os.path.join(_split_f), "r") as lines:
+            for line in tqdm(lines):
+                _image = os.path.join(_image_dir, line.rstrip('\n')+".jpg")
+                assert os.path.isfile(_image)
+                self.images.append(_image)
+                if self.mode != 'test':
+                    _mask = os.path.join(_mask_dir, line.rstrip('\n')+".png")
+                    assert os.path.isfile(_mask)
+                    self.masks.append(_mask)
+
+        if self.mode != 'test':
+            assert (len(self.images) == len(self.masks))
 
     def __getitem__(self, index):
-        raise NotImplemented
-
-    @property
-    def num_class(self):
-        return self.NUM_CLASS
-
-    @property
-    def pred_offset(self):
-        raise NotImplemented
-
-    def make_pred(self, x):
-        return x + self.pred_offset
-
-    def _val_sync_transform(self, img, mask):
-        outsize = self.crop_size
-        short_size = outsize
-        w, h = img.size
-        if w > h:
-            oh = short_size
-            ow = int(1.0 * w * oh / h)
+        img = Image.open(self.images[index]).convert('RGB')
+        if self.mode == 'test':
+            if self.transform is not None:
+                img = self.transform(img)
+            return img, os.path.basename(self.images[index])
+        target = Image.open(self.masks[index])
+        # synchrosized transform
+        if self.mode == 'train':
+            img, target = self._sync_transform( img, target)
+        elif self.mode == 'val':
+            img, target = self._val_sync_transform( img, target)
         else:
-            ow = short_size
-            oh = int(1.0 * h * ow / w)
-        img = img.resize((ow, oh), Image.BILINEAR)
-        mask = mask.resize((ow, oh), Image.NEAREST)
-        # center crop
-        w, h = img.size
-        x1 = int(round((w - outsize) / 2.))
-        y1 = int(round((h - outsize) / 2.))
-        img = img.crop((x1, y1, x1+outsize, y1+outsize))
-        mask = mask.crop((x1, y1, x1+outsize, y1+outsize))
-        # final transform
-        return img, self._mask_transform(mask)
-
+            assert self.mode == 'testval'
+            target = self._mask_transform(target)
+        # general resize, normalize and toTensor
+        if self.transform is not None:
+            img = self.transform(img)
+        if self.target_transform is not None:
+            target = self.target_transform(target)
+        return img, target
     def _sync_transform(self, img, mask):
         # random mirror
         if random.random() < 0.5:
@@ -81,8 +85,8 @@ class BaseDataset(data.Dataset):
         img = img.resize((ow, oh), Image.BILINEAR)
         mask = mask.resize((ow, oh), Image.NEAREST)
 
-        # # # random rotate
-        # img, mask = RandomRotation(img, mask, 10, is_continuous=False)
+        # random rotate
+        img, mask = RandomRotation(img, mask, 45, is_continuous=False)
 
         # pad crop
         if short_size < crop_size:
@@ -96,11 +100,11 @@ class BaseDataset(data.Dataset):
         y1 = random.randint(0, h - crop_size)
         img = img.crop((x1, y1, x1+crop_size, y1+crop_size))
         mask = mask.crop((x1, y1, x1+crop_size, y1+crop_size))
-        # gaussian blur as in PSP
-        if random.random() < 0.5:
-            img = img.filter(ImageFilter.GaussianBlur(
-                radius=random.random()))
-        
+        # # gaussian blur as in PSP
+        # if random.random() < 0.5:
+        #     img = img.filter(ImageFilter.GaussianBlur(
+        #         radius=random.random()))
+
         #random hsv
         # img = RandomHSV(img, 10, 10, 10)
         # #random contrast
@@ -109,21 +113,18 @@ class BaseDataset(data.Dataset):
         # img = RandomPerm(img)
         # final transform
         return img, self._mask_transform(mask)
-
     def _mask_transform(self, mask):
-        return torch.from_numpy(np.array(mask)).long()
+        target = np.array(mask).astype('int32')
+        target[target == 255] = -1
+        return torch.from_numpy(target).long()
 
+    def __len__(self):
+        return len(self.images)
 
-def test_batchify_fn(data):
-    error_msg = "batch must contain tensors, tuples or lists; found {}"
-    if isinstance(data[0], (str, torch.Tensor)):
-        return list(data)
-    elif isinstance(data[0], (tuple, list)):
-        data = zip(*data)
-        return [test_batchify_fn(i) for i in data]
-    raise TypeError((error_msg.format(type(data[0]))))
-
-
+    @property
+    def pred_offset(self):
+        return 0
+        
 def RandomHSV(image, h_r, s_r, v_r):
     """Generate randomly the image in hsv space."""
     image = cv2.cvtColor(numpy.asarray(image), cv2.COLOR_RGB2BGR)
@@ -153,7 +154,8 @@ def RandomRotation(image, segmentation, angle_r, is_continuous=False):
     image = cv2.cvtColor(numpy.asarray(image), cv2.COLOR_RGB2BGR)
     segmentation = numpy.asarray(segmentation)
     row, col, _ = image.shape
-    rand_angle = np.random.randint(-angle_r, angle_r) if angle_r != 0 else 0
+    # rand_angle = np.random.randint(-angle_r, angle_r) if angle_r != 0 else 0
+    rand_angle = np.random.randint(-4, 4)*angle_r
     m = cv2.getRotationMatrix2D(center=(col/2, row/2), angle=rand_angle, scale=1)
 
     new_image = cv2.warpAffine(image, m, (col,row), flags=cv2.INTER_CUBIC, borderValue=0)
