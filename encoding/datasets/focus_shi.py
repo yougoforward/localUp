@@ -36,6 +36,7 @@ class Blur2Segmentation(BaseDataset):
         with open(os.path.join(_split_f), "r") as lines:
             for line in tqdm(lines):
                 _image = os.path.join(_image_dir, line.rstrip('\n')+".jpg")
+                print(_image)
                 assert os.path.isfile(_image)
                 self.images.append(_image)
                 if self.mode != 'test':
