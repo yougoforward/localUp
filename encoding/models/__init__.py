@@ -26,6 +26,7 @@ from .up_fcn_dilation import *
 from .up_fcn_dilation_v2 import *
 from .up_fcn_dilation_v3 import *
 
+from .blur_detect import *
 def get_segmentation_model(name, **kwargs):
     from .fcn import get_fcn
     models = {
@@ -50,6 +51,8 @@ def get_segmentation_model(name, **kwargs):
         'up_fcn_dilation': get_up_fcn_dilation,
         'up_fcn_dilation_v2': get_up_fcn_dilation_v2,
         'up_fcn_dilation_v3': get_up_fcn_dilation_v3,
+
+        'blur_detect': get_blur_detect,
 
     }
     return models[name.lower()](**kwargs)
