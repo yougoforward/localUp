@@ -50,7 +50,7 @@ class up_fcn_3x3_s4_dilation_256Head(nn.Module):
 
         self.localUp2=localUp(256, 512, norm_layer, up_kwargs)
         self.localUp3=localUp(512, 1024, norm_layer, up_kwargs)
-        self.localUp4=localUp(1024, 2048, norm_layer, up_kwargs)
+        self.localUp4=localUp2(1024, 2048, norm_layer, up_kwargs)
 
     def forward(self, c1,c2,c3,c4,c20,c30,c40):
         out = self.conv5(c4)
