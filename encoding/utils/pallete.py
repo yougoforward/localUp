@@ -24,7 +24,11 @@ def get_mask_pallete(npimg, dataset='detail'):
         out_img.putpalette(citypallete)
     elif dataset in ('pcontext', 'pascal_voc', 'pascal_aug'):
         out_img.putpalette(vocpallete)
+    elif dataset == 'focus_shi':
+        out_img.putpalette(focus_pallete)
     return out_img
+
+focus_pallete = [255,255,255,0,0,0]
 
 def _get_voc_pallete(num_cls):
     n = num_cls
