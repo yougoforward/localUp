@@ -56,7 +56,7 @@ class up_fcn_3x3_s4_dilation_256Head(nn.Module):
         out = self.conv5(c4)
         out = self.localUp4(c3, c40, out)
         out = self.localUp3(c2, c30, out)
-        out = self.localUp2(c1, c20, out)
+        out = self.localUp2(c1, c2, out)
         return self.conv6(out)
 
 class localUp(nn.Module):
@@ -100,10 +100,10 @@ class localUp2(nn.Module):
         #                            nn.Conv2d(64, 64, 3, padding=2, dilation=2, bias=False),
         #                            norm_layer(64),
         #                            nn.ReLU())
-        self.refine = nn.Sequential(nn.Conv2d(in_channels1, self.key_dim, 3, padding=2, dilation=2, bias=False),
-                                   norm_layer(self.key_dim),
+        self.refine = nn.Sequential(nn.Conv2d(in_channels1, self.key_dim*2, 3, padding=1, dilation=1, bias=False),
+                                   norm_layer(self.key_dim*2),
                                    nn.ReLU(),
-                                   nn.Conv2d(in_channels1//8, self.key_dim, 3, padding=2, dilation=2, bias=False),
+                                   nn.Conv2d(self.key_dim*2, self.key_dim, 3, padding=1, dilation=1, bias=False),
                                    norm_layer(self.key_dim),
                                    )
         self.refine2 = nn.Sequential(nn.Conv2d(in_channels2, self.key_dim, 1, padding=0, dilation=1, bias=False),
