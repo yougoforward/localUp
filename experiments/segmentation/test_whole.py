@@ -88,10 +88,12 @@ def test(args):
                 outputs = evaluator.parallel_forward(image)
                 # predicts = [testset.make_pred(torch.max(output, 1)[1].cpu().numpy())
                 #             for output in outputs]
-                predicts = [output.cpu().numpy() for output in outputs]
+                predicts = [torch.softmax(output,1).cpu().numpy() for output in outputs]
             for predict, impath in zip(predicts, dst):
                 # mask = utils.get_mask_pallete(predict, args.dataset)
-                mask = predict[0,:,:]
+                import numpy as np
+                from PIL import Image
+                mask = Image.fromarray((predict[0,1,:,:]*255).astype(np.uint8))
                 outname = os.path.splitext(impath)[0] + '.bmp'
                 mask.save(os.path.join(outdir, outname))
 if __name__ == "__main__":
