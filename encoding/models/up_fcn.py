@@ -69,12 +69,13 @@ class localUp(nn.Module):
         #                            nn.Conv2d(64, 64, 3, padding=2, dilation=2, bias=False),
         #                            norm_layer(64),
         #                            nn.ReLU())
-        self.refine = nn.Sequential(nn.Conv2d(in_channels1, self.key_dim, 1, padding=0, dilation=1, bias=False),
-                                   norm_layer(in_channels1//8),
-                                   nn.ReLU())
+        self.refine = nn.Sequential(nn.Conv2d(in_channels1, 256, 1, padding=0, dilation=1, bias=False),
+                                   norm_layer(256),
+                                   nn.ReLU(),
+                                   nn.Conv2d(256, self.key_dim, 1, padding=0, dilation=1, bias=False),
+                                   norm_layer(self.key_dim))
         self.refine2 = nn.Sequential(nn.Conv2d(in_channels2, self.key_dim, 1, padding=0, dilation=1, bias=False),
-                                   norm_layer(in_channels1//8),
-                                   nn.ReLU()) 
+                                   norm_layer(self.key_dim)) 
         self._up_kwargs = up_kwargs
 
 
