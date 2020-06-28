@@ -76,15 +76,24 @@ def test(args):
                 pixAcc, mIoU = metric.get()
                 tbar.set_description( 'pixAcc: %.4f, mIoU: %.4f' % (pixAcc, mIoU))
         else:
+            # with torch.no_grad():
+            #     outputs = evaluator.parallel_forward(image)
+            #     predicts = [testset.make_pred(torch.max(output, 1)[1].cpu().numpy())
+            #                 for output in outputs]
+            # for predict, impath in zip(predicts, dst):
+            #     mask = utils.get_mask_pallete(predict, args.dataset)
+            #     outname = os.path.splitext(impath)[0] + '.png'
+            #     mask.save(os.path.join(outdir, outname))
             with torch.no_grad():
                 outputs = evaluator.parallel_forward(image)
-                predicts = [testset.make_pred(torch.max(output, 1)[1].cpu().numpy())
-                            for output in outputs]
+                # predicts = [testset.make_pred(torch.max(output, 1)[1].cpu().numpy())
+                #             for output in outputs]
+                predicts = [output.cpu().numpy() for output in outputs]
             for predict, impath in zip(predicts, dst):
-                mask = utils.get_mask_pallete(predict, args.dataset)
-                outname = os.path.splitext(impath)[0] + '.png'
+                # mask = utils.get_mask_pallete(predict, args.dataset)
+                mask = predict[0,:,:]
+                outname = os.path.splitext(impath)[0] + '.bmp'
                 mask.save(os.path.join(outdir, outname))
-
 if __name__ == "__main__":
     args = Options().parse()
     torch.manual_seed(args.seed)
