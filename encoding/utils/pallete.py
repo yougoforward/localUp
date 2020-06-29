@@ -28,7 +28,7 @@ def get_mask_pallete(npimg, dataset='detail'):
         out_img.putpalette(focus_pallete)
     return out_img
 
-focus_pallete = [255,255,255,0,0,0]
+focus_pallete = [0,0,0,255,255,255]
 
 def _get_voc_pallete(num_cls):
     n = num_cls
