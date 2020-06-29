@@ -40,7 +40,7 @@ class up_fcn_3x3_s4_dilation_256(BaseNet):
 class up_fcn_3x3_s4_dilation_256Head(nn.Module):
     def __init__(self, in_channels, out_channels, norm_layer, up_kwargs):
         super(up_fcn_3x3_s4_dilation_256Head, self).__init__()
-        inter_channels = in_channels // 4
+        inter_channels = in_channels // 8
         self.conv5 = nn.Sequential(nn.Conv2d(in_channels, inter_channels, 3, padding=1, bias=False),
                                    norm_layer(inter_channels),
                                    nn.ReLU(),
@@ -50,7 +50,7 @@ class up_fcn_3x3_s4_dilation_256Head(nn.Module):
 
         self.localUp2=localUp(256, 512, norm_layer, up_kwargs)
         self.localUp3=localUp(512, 1024, norm_layer, up_kwargs)
-        self.localUp4=localUp2(1024, 2048, norm_layer, up_kwargs)
+        self.localUp4=localUp(1024, 2048, norm_layer, up_kwargs)
 
     def forward(self, c1,c2,c3,c4,c20,c30,c40):
         out = self.conv5(c4)
@@ -69,7 +69,10 @@ class localUp(nn.Module):
         #                            nn.Conv2d(64, 64, 3, padding=2, dilation=2, bias=False),
         #                            norm_layer(64),
         #                            nn.ReLU())
-        self.refine = nn.Sequential(nn.Conv2d(in_channels1, self.key_dim, 1, padding=0, dilation=1, bias=False),
+        self.refine = nn.Sequential(nn.Conv2d(in_channels1, 256, 1, padding=0, dilation=1, bias=False),
+                                   norm_layer(256),
+                                   nn.ReLU(),
+                                   nn.Conv2d(256, self.key_dim, 1, padding=0, dilation=1, bias=False),
                                    norm_layer(self.key_dim))
         self.refine2 = nn.Sequential(nn.Conv2d(in_channels2, self.key_dim, 1, padding=0, dilation=1, bias=False),
                                    norm_layer(self.key_dim)) 
@@ -90,45 +93,6 @@ class localUp(nn.Module):
         out = torch.matmul(att, unfold_out.permute(0,3,2,1)).permute(0,3,2,1).view(n,-1,h,w)
 
         return out
-class localUp2(nn.Module):
-    def __init__(self, in_channels1, in_channels2, norm_layer, up_kwargs):
-        super(localUp2, self).__init__()
-        self.key_dim = in_channels1//8
-        # self.refine = nn.Sequential(nn.Conv2d(256, 64, 3, padding=2, dilation=2, bias=False),
-        #                            norm_layer(64),
-        #                            nn.ReLU(),
-        #                            nn.Conv2d(64, 64, 3, padding=2, dilation=2, bias=False),
-        #                            norm_layer(64),
-        #                            nn.ReLU())
-        self.refine = nn.Sequential(nn.Conv2d(in_channels1, self.key_dim*2, 3, padding=1, dilation=1, bias=False),
-                                   norm_layer(self.key_dim*2),
-                                   nn.ReLU(),
-                                   nn.Conv2d(self.key_dim*2, self.key_dim, 3, padding=1, dilation=1, bias=False),
-                                   norm_layer(self.key_dim),
-                                   )
-        self.refine2 = nn.Sequential(nn.Conv2d(in_channels2, self.key_dim, 1, padding=0, dilation=1, bias=False),
-                                   norm_layer(self.key_dim),
-                                   ) 
-        self._up_kwargs = up_kwargs
-
-
-
-    def forward(self, c1,c2,out):
-        n,c,h,w =c1.size()
-        c1 = self.refine(c1) # n, 64, h, w
-        c2 = interpolate(c2, (h,w), **self._up_kwargs)
-        c2 = self.refine2(c2)
-
-        unfold_up_c2 = unfold(c2, 3, 2, 2, 1).view(n, -1, 3*3, h*w)
-        # torch.nn.functional.unfold(input, kernel_size, dilation=1, padding=0, stride=1)
-        energy = torch.matmul(c1.view(n, -1, 1, h*w).permute(0,3,2,1), unfold_up_c2.permute(0,3,1,2)) #n,h*w,1,3x3
-        att = torch.softmax(energy, dim=-1)
-        out = interpolate(out, (h,w), **self._up_kwargs)
-        unfold_out = unfold(out, 3, 2, 2, 1).view(n, -1, 3*3, h*w)
-        out = torch.matmul(att, unfold_out.permute(0,3,2,1)).permute(0,3,2,1).view(n,-1,h,w)
-
-        return out
-
 def get_up_fcn_3x3_s4_dilation_256(dataset='pascal_voc', backbone='resnet50', pretrained=False,
             root='~/.encoding/models', **kwargs):
     r"""up_fcn_3x3_s4_dilation_256 model from the paper `"Fully Convolutional Network for semantic segmentation"
