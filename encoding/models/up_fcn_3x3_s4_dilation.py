@@ -48,7 +48,7 @@ class up_fcn_3x3_s4_dilationHead(nn.Module):
         self.conv6 = nn.Sequential(nn.Dropout2d(0.1, False),
                                    nn.Conv2d(inter_channels, out_channels, 1))
 
-        self.localUp2=localUp2(256, 512, norm_layer, up_kwargs)
+        self.localUp2=localUp(256, 512, norm_layer, up_kwargs)
         self.localUp3=localUp(512, 1024, norm_layer, up_kwargs)
         self.localUp4=localUp(1024, 2048, norm_layer, up_kwargs)
 
@@ -62,7 +62,7 @@ class up_fcn_3x3_s4_dilationHead(nn.Module):
 class localUp(nn.Module):
     def __init__(self, in_channels1, in_channels2, norm_layer, up_kwargs):
         super(localUp, self).__init__()
-        self.key_dim = in_channels1//8
+        self.key_dim = in_channels1//4
         # self.refine = nn.Sequential(nn.Conv2d(256, 64, 3, padding=2, dilation=2, bias=False),
         #                            norm_layer(64),
         #                            nn.ReLU(),
