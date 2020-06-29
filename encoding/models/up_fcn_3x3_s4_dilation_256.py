@@ -56,7 +56,7 @@ class up_fcn_3x3_s4_dilation_256Head(nn.Module):
         out = self.conv5(c4)
         out = self.localUp4(c3, c40, out)
         out = self.localUp3(c2, c30, out)
-        out = self.localUp2(c1, c2, out)
+        # out = self.localUp2(c1, c2, out)
         return self.conv6(out)
 
 class localUp(nn.Module):
