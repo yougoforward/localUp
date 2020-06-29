@@ -56,7 +56,7 @@ class up_fcn_dilationHead(nn.Module):
         out = self.conv5(c4)
         out = self.localUp4(c3, c40, out)
         out = self.localUp3(c2, c30, out)
-        # out = self.localUp2(c1, c20, out)
+        out = self.localUp2(c1, c20, out)
         return self.conv6(out)
 
 class localUp(nn.Module):
@@ -70,11 +70,9 @@ class localUp(nn.Module):
         #                            norm_layer(64),
         #                            nn.ReLU())
         self.refine = nn.Sequential(nn.Conv2d(in_channels1, self.key_dim, 1, padding=0, dilation=1, bias=False),
-                                   norm_layer(in_channels1//8),
-                                   nn.ReLU())
+                                   norm_layer(in_channels1//8))
         self.refine2 = nn.Sequential(nn.Conv2d(in_channels2, self.key_dim, 1, padding=0, dilation=1, bias=False),
-                                   norm_layer(in_channels1//8),
-                                   nn.ReLU()) 
+                                   norm_layer(in_channels1//8)) 
         self._up_kwargs = up_kwargs
 
 
