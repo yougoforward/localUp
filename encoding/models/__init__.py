@@ -31,6 +31,7 @@ from .fcn_fpn_s16 import *
 from .fcn_fpn_256 import *
 from .fcn_fpn_nobn import *
 from .fcn_fpn_s4 import *
+from .pano_fpn import *
 
 from .blur_detect import *
 def get_segmentation_model(name, **kwargs):
@@ -64,6 +65,7 @@ def get_segmentation_model(name, **kwargs):
         'fcn_fpn_256': get_fcn_fpn_256,
         'fcn_fpn_nobn': get_fcn_fpn_nobn,
         'fcn_fpn_s4': get_fcn_fpn_s4,
+        'pano_fpn': get_pano_fpn,
 
     }
     return models[name.lower()](**kwargs)
