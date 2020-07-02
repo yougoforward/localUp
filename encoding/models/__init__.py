@@ -21,6 +21,8 @@ from .up_fcn_3x3_s16 import *
 from .up_fcn_3x3_s8 import *
 from .up_fcn_5x5_s8 import *
 from .up_fcn_5x5_s4 import *
+from .up_fcn_5x5_s16 import *
+
 from .up_fcn_com import *
 from .up_fcn_dilation import *
 from .up_fcn_dilation_v2 import *
@@ -54,6 +56,8 @@ def get_segmentation_model(name, **kwargs):
         'up_fcn_3x3_s16': get_up_fcn_3x3_s16,
         'up_fcn_5x5_s8': get_up_fcn_5x5_s8,
         'up_fcn_5x5_s4': get_up_fcn_5x5_s4,
+        'up_fcn_5x5_s16': get_up_fcn_5x5_s16,
+
         'up_fcn_com':get_up_fcn_com,
         'up_fcn_dilation': get_up_fcn_dilation,
         'up_fcn_dilation_v2': get_up_fcn_dilation_v2,
