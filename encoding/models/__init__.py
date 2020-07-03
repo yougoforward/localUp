@@ -10,6 +10,7 @@ from .deeplabv3plus import*
 
 from .up_fcn import *
 from .up_psp import *
+from .fpn_psp import *
 from .up_deeplabv3 import *
 from .up_fcn_3x3_s4_dilation import *
 from .up_fcn_3x3_s4_dilation_256 import *
@@ -48,6 +49,8 @@ def get_segmentation_model(name, **kwargs):
         'psp': get_psp,
         'up_fcn': get_up_fcn,
         'up_psp': get_up_psp,
+        'fpn_psp': get_fpn_psp,
+        
         'up_deeplabv3': get_up_deeplabv3,
         'up_fcn_3x3_s4': get_up_fcn_3x3_s4,
         'up_fcn_3x3_s4_dilation':get_up_fcn_3x3_s4_dilation,
