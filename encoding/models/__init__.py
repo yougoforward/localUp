@@ -27,6 +27,7 @@ from .up_fcn_com import *
 from .up_fcn_dilation import *
 from .up_fcn_dilation_v2 import *
 from .up_fcn_dilation_v3 import *
+from .up_fcn_dilation_s8plus import *
 
 from .fcn_fpn import *
 from .fcn_fpn_s16 import *
@@ -62,7 +63,8 @@ def get_segmentation_model(name, **kwargs):
         'up_fcn_dilation': get_up_fcn_dilation,
         'up_fcn_dilation_v2': get_up_fcn_dilation_v2,
         'up_fcn_dilation_v3': get_up_fcn_dilation_v3,
-
+        'up_fcn_dilation_s8plus': get_up_fcn_dilation_s8plus,
+        
         'blur_detect': get_blur_detect,
         'fcn_fpn': get_fcn_fpn,
         'fcn_fpn_s16': get_fcn_fpn_s16,
