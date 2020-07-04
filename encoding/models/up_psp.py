@@ -54,12 +54,16 @@ class up_pspHead(nn.Module):
         self.localUp2=localUp(256, 512, norm_layer, up_kwargs)
         self.localUp3=localUp(512, 1024, norm_layer, up_kwargs)
         self.localUp4=localUp(1024, 2048, norm_layer, up_kwargs)
+        self.refine = nn.Sequential(nn.Conv2d(inter_channels, inter_channels, 3, padding=1, bias=False),
+                                   norm_layer(inter_channels),
+                                   nn.ReLU(),
+                                   )
     def forward(self, c1,c2,c3,c4,c20,c30,c40):
         out = self.conv5(c4)
         out = self.localUp4(c3, c40, out)
         out = self.localUp3(c2, c30, out)
         # out = self.localUp2(c1, c20, out)
-
+        out = self.refine(out)
         out=self.psp(out)
         return self.conv6(out)
 
