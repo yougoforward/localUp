@@ -22,7 +22,7 @@ class fpn_psp(BaseNet):
             self.auxlayer = FCNHead(1024, nclass, norm_layer)
 
     def forward(self, x):
-        _, _, h, w = x.size()
+        imsize = x.size()[2:]
         c1, c2, c3, c4, c20, c30, c40 = self.base_forward(x)
         x = self.head(c1,c2,c3,c4,c20,c30,c40)
         x = interpolate(x, imsize, **self._up_kwargs)
