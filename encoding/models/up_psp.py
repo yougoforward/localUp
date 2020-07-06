@@ -60,7 +60,7 @@ class up_pspHead(nn.Module):
                                    )
     def forward(self, c1,c2,c3,c4,c20,c30,c40):
         out = self.conv5(c4)
-        out = self.localUp4(c3, c40, c4)
+        out = self.localUp4(c3, c40, out)
         out = self.localUp3(c2, c30, out)
         # out = self.localUp2(c1, c20, out)
         out = self.refine(out)
