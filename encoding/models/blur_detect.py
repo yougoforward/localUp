@@ -49,9 +49,9 @@ class blur_detectHead(nn.Module):
         self.conv6 = nn.Sequential(nn.Dropout2d(0.1, False),
                                    nn.Conv2d(inter_channels*2, out_channels, 1))
 
-        # self.localUp2=localUp(256, 512, norm_layer, up_kwargs)
-        self.localUp3=localUp(512, 1024, norm_layer, up_kwargs)
-        self.localUp4=localUp(1024, 2048, norm_layer, up_kwargs)
+        self.localUp2=localUp(256, in_channels, norm_layer, up_kwargs)
+        self.localUp3=localUp(512, in_channels, norm_layer, up_kwargs)
+        self.localUp4=localUp(1024, in_channels, norm_layer, up_kwargs)
 
         self.denseaspp = DenseASPP(inter_channels, inter_channels, norm_layer)
         self.pam0 = PAM_Module(in_dim=inter_channels, key_dim=inter_channels//8, value_dim=inter_channels, out_dim=inter_channels, norm_layer=norm_layer)
@@ -59,48 +59,42 @@ class blur_detectHead(nn.Module):
                             nn.Conv2d(in_channels, inter_channels, 1, bias=False),
                             norm_layer(inter_channels),
                             nn.ReLU(True))
+        self.se = nn.Sequential(
+                            nn.Conv2d(inter_channels, inter_channels, 1, bias=True),
+                            nn.Sigmoid())
 
     def forward(self, c1,c2,c3,c4,c20,c30,c40):
-        out = self.conv5(c4)
-        out = self.localUp4(c3, c40, out)
-        out = self.localUp3(c2, c30, out)
-        # out = self.localUp2(c1, c20, out)
+        out = self.localUp4(c3, c4)
+        out = self.localUp3(c2, out)
+        # out = self.localUp2(c1, out)
         out = self.denseaspp(out)
-        out = self.pam0(out)
+
         #gp
         gp = self.gap(c4)
-
+        # se
+        se = self.se(gp)
+        out = out + se*out
+        # gff
+        out = self.pam0(out)
         n,c,h,w=out.size()
         out = torch.cat([out, gp.expand(n,c,h,w)], dim=1)
         return self.conv6(out)
 
 class localUp(nn.Module):
-    def __init__(self, in_channels1, in_channels2, norm_layer, up_kwargs):
+    def __init__(self, in_channels, out_channels, norm_layer, up_kwargs):
         super(localUp, self).__init__()
-        self.key_dim = in_channels1//8
-        self.refine = nn.Sequential(nn.Conv2d(in_channels1, self.key_dim, 1, padding=0, dilation=1, bias=False),
-                                   norm_layer(in_channels1//8),
+        self.connect = nn.Sequential(nn.Conv2d(in_channels, out_channels, 1, padding=0, dilation=1, bias=False),
+                                   norm_layer(out_channels),
                                    nn.ReLU())
-        self.refine2 = nn.Sequential(nn.Conv2d(in_channels2, self.key_dim, 1, padding=0, dilation=1, bias=False),
-                                   norm_layer(in_channels1//8),
-                                   nn.ReLU()) 
         self._up_kwargs = up_kwargs
 
 
-    def forward(self, c1,c2,out):
+
+    def forward(self, c1,c2):
         n,c,h,w =c1.size()
-        c1 = self.refine(c1) # n, 64, h, w
+        c1 = self.connect(c1) # n, 64, h, w
         c2 = interpolate(c2, (h,w), **self._up_kwargs)
-        c2 = self.refine2(c2)
-
-        unfold_up_c2 = unfold(c2, 3, 2, 2, 1).view(n, -1, 3*3, h*w)
-        # torch.nn.functional.unfold(input, kernel_size, dilation=1, padding=0, stride=1)
-        energy = torch.matmul(c1.view(n, -1, 1, h*w).permute(0,3,2,1), unfold_up_c2.permute(0,3,1,2)) #n,h*w,1,3x3
-        att = torch.softmax(energy, dim=-1)
-        out = interpolate(out, (h,w), **self._up_kwargs)
-        unfold_out = unfold(out, 3, 2, 2, 1).view(n, -1, 3*3, h*w)
-        out = torch.matmul(att, unfold_out.permute(0,3,2,1)).permute(0,3,2,1).view(n,-1,h,w)
-
+        out = c1+c2
         return out
 
 class DenseASPP(nn.Module):
