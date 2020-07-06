@@ -13,12 +13,12 @@ from .fcn import FCNHead
 
 from .base import BaseNet
 
-__all__ = ['up_fcn_dilation_v3', 'get_up_fcn_dilation_v3']
+__all__ = ['up_fcn_2048', 'get_up_fcn_2048']
 
-class up_fcn_dilation_v3(BaseNet):
+class up_fcn_2048(BaseNet):
     def __init__(self, nclass, backbone, aux=True, se_loss=False, norm_layer=nn.BatchNorm2d, **kwargs):
-        super(up_fcn_dilation_v3, self).__init__(nclass, backbone, aux, se_loss, norm_layer=norm_layer, **kwargs)
-        self.head = up_fcn_dilation_v3Head(2048, nclass, norm_layer, self._up_kwargs)
+        super(up_fcn_2048, self).__init__(nclass, backbone, aux, se_loss, norm_layer=norm_layer, **kwargs)
+        self.head = up_fcn_2048Head(2048, nclass, norm_layer, self._up_kwargs)
         if aux:
             self.auxlayer = FCNHead(1024, nclass, norm_layer)
 
@@ -37,9 +37,9 @@ class up_fcn_dilation_v3(BaseNet):
         return tuple(outputs)
 
         
-class up_fcn_dilation_v3Head(nn.Module):
+class up_fcn_2048Head(nn.Module):
     def __init__(self, in_channels, out_channels, norm_layer, up_kwargs):
-        super(up_fcn_dilation_v3Head, self).__init__()
+        super(up_fcn_2048Head, self).__init__()
         inter_channels = in_channels // 4
         self.conv5 = nn.Sequential(nn.Conv2d(in_channels, inter_channels, 3, padding=1, bias=False),
                                    norm_layer(inter_channels),
@@ -95,10 +95,10 @@ class localUp(nn.Module):
         return out
 
 
-def get_up_fcn_dilation_v3(dataset='pascal_voc', backbone='resnet50', pretrained=False,
+def get_up_fcn_2048(dataset='pascal_voc', backbone='resnet50', pretrained=False,
             root='~/.encoding/models', **kwargs):
-    r"""up_fcn_dilation_v3 model from the paper `"Fully Convolutional Network for semantic segmentation"
-    <https://people.eecs.berkeley.edu/~jonlong/long_shelhamer_up_fcn_dilation_v3.pdf>`_
+    r"""up_fcn_2048 model from the paper `"Fully Convolutional Network for semantic segmentation"
+    <https://people.eecs.berkeley.edu/~jonlong/long_shelhamer_up_fcn_2048.pdf>`_
     Parameters
     ----------
     dataset : str, default pascal_voc
@@ -109,7 +109,7 @@ def get_up_fcn_dilation_v3(dataset='pascal_voc', backbone='resnet50', pretrained
         Location for keeping the model parameters.
     Examples
     --------
-    >>> model = get_up_fcn_dilation_v3(dataset='pascal_voc', backbone='resnet50', pretrained=False)
+    >>> model = get_up_fcn_2048(dataset='pascal_voc', backbone='resnet50', pretrained=False)
     >>> print(model)
     """
     acronyms = {
@@ -120,11 +120,11 @@ def get_up_fcn_dilation_v3(dataset='pascal_voc', backbone='resnet50', pretrained
     }
     # infer number of classes
     from ..datasets import datasets
-    model = up_fcn_dilation_v3(datasets[dataset.lower()].NUM_CLASS, backbone=backbone, root=root, **kwargs)
+    model = up_fcn_2048(datasets[dataset.lower()].NUM_CLASS, backbone=backbone, root=root, **kwargs)
     if pretrained:
         from .model_store import get_model_file
         model.load_state_dict(torch.load(
-            get_model_file('up_fcn_dilation_v3_%s_%s'%(backbone, acronyms[dataset]), root=root)))
+            get_model_file('up_fcn_2048_%s_%s'%(backbone, acronyms[dataset]), root=root)))
     return model
 
 

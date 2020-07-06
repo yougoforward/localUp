@@ -31,6 +31,9 @@ from .up_fcn_dilation_v3 import *
 from .up_fcn_dilation_s8plus import *
 
 from .fcn_fpn import *
+from .fcn_fpn_2048 import *
+from .up_fcn_2048 import *
+
 from .fcn_fpn_s16 import *
 from .fcn_fpn_256 import *
 from .fcn_fpn_nobn import *
@@ -75,6 +78,9 @@ def get_segmentation_model(name, **kwargs):
         'fcn_fpn_nobn': get_fcn_fpn_nobn,
         'fcn_fpn_s4': get_fcn_fpn_s4,
         'pano_fpn': get_pano_fpn,
+
+        'fcn_fpn_2048': get_fcn_fpn_2048,
+        'up_fcn_2048': get_up_fcn_2048,
 
     }
     return models[name.lower()](**kwargs)
