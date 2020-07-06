@@ -63,7 +63,7 @@ class up_pspHead(nn.Module):
         out = self.localUp4(c3, c40, out)
         out = self.localUp3(c2, c30, out)
         # out = self.localUp2(c1, c20, out)
-        out = self.refine(out)
+        # out = self.refine(out)
         out=self.psp(out)
         return self.conv6(out)
 
