@@ -54,16 +54,16 @@ class fpn_pspHead(nn.Module):
         # self.localUp2=localUp(256, in_channels, norm_layer, up_kwargs)
         self.localUp3=localUp(512, in_channels, norm_layer, up_kwargs)
         self.localUp4=localUp(1024, in_channels, norm_layer, up_kwargs)
-        self.refine = nn.Sequential(nn.Conv2d(in_channels, in_channels, 3, padding=1, bias=False),
-                                   norm_layer(in_channels),
-                                   nn.ReLU(),
-                                   )
+        # self.refine = nn.Sequential(nn.Conv2d(in_channels, in_channels, 3, padding=1, bias=False),
+        #                            norm_layer(in_channels),
+        #                            nn.ReLU(),
+        #                            )
     def forward(self, c1,c2,c3,c4,c20,c30,c40):
         # out = self.conv5(c4)
         out = self.localUp4(c3, c4)
         out = self.localUp3(c2, out)
         # out = self.localUp2(c1, out)
-        out = self.refine(out)
+        # out = self.refine(out)
         out=self.psp(out)
         return self.conv6(out)
 
