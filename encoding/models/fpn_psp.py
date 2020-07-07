@@ -39,8 +39,8 @@ class fpn_pspHead(nn.Module):
         super(fpn_pspHead, self).__init__()
         inter_channels = in_channels//4
 
-        self.psp = nn.Sequential(PyramidPooling(in_channels, inter_channels, norm_layer, up_kwargs),
-                                   nn.Conv2d(in_channels*2, inter_channels, 3, padding=1, bias=False),
+        self.psp = nn.Sequential(PyramidPooling(inter_channels, inter_channels, norm_layer, up_kwargs),
+                                   nn.Conv2d(inter_channels*5, inter_channels, 3, padding=1, bias=False),
                                    norm_layer(inter_channels),
                                    nn.ReLU(True))
         self.conv6 = nn.Sequential(nn.Dropout2d(0.1, False),
@@ -51,16 +51,16 @@ class fpn_pspHead(nn.Module):
                                    norm_layer(inter_channels),
                                    nn.ReLU(),
                                    )
-        self.localUp2=localUp(256, in_channels, norm_layer, up_kwargs)
-        self.localUp3=localUp(512, in_channels, norm_layer, up_kwargs)
-        self.localUp4=localUp(1024, in_channels, norm_layer, up_kwargs)
-        self.refine = nn.Sequential(nn.Conv2d(in_channels, in_channels, 3, padding=1, bias=False),
-                                   norm_layer(in_channels),
-                                   nn.ReLU(),
-                                   )
+        # self.localUp2=localUp(256, inter_channels, norm_layer, up_kwargs)
+        self.localUp3=localUp(512, inter_channels, norm_layer, up_kwargs)
+        self.localUp4=localUp(1024, inter_channels, norm_layer, up_kwargs)
+        # self.refine = nn.Sequential(nn.Conv2d(in_channels, in_channels, 3, padding=1, bias=False),
+        #                            norm_layer(in_channels),
+        #                            nn.ReLU(),
+        #                            )
     def forward(self, c1,c2,c3,c4,c20,c30,c40):
-        # out = self.conv5(c4)
-        out = self.localUp4(c3, c4)
+        out = self.conv5(c4)
+        out = self.localUp4(c3, out)
         out = self.localUp3(c2, out)
         # out = self.localUp2(c1, out)
         # out = self.refine(out)
