@@ -89,7 +89,8 @@ class BaseNet(nn.Module):
         # print(c4.size())
         # print(self.jpu)
         if self.jpu:
-            return self.jpu(c1, c2, c3, c4)
+            c1, c2, c3, c4 = self.jpu(c1, c2, c3, c4)
+            return c1, c2, c3, c4, c20, c30, c40
         else:
             return c1, c2, c3, c4, c20, c30, c40
 
