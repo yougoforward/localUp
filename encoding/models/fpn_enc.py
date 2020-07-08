@@ -100,8 +100,8 @@ class EncHead(nn.Module):
                                    nn.Conv2d(512, out_channels, 1))
 
         # self.localUp2=localUp(256, in_channels, norm_layer, up_kwargs)
-        self.localUp3=localUp(512, in_channels, norm_layer, up_kwargs)
-        self.localUp4=localUp(1024, in_channels, norm_layer, up_kwargs)
+        self.localUp3=localUp(512, in_channels[-1], norm_layer, up_kwargs)
+        self.localUp4=localUp(1024, in_channels[-1], norm_layer, up_kwargs)
 
     def forward(self, c1,c2,c3,c4,c20,c30,c40):
         out = self.localUp4(c3, c4)
