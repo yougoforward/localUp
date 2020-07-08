@@ -40,7 +40,9 @@ from .fcn_fpn_nobn import *
 from .fcn_fpn_s4 import *
 from .pano_fpn import *
 from .fpn_gsnet import *
-
+from .fpn_enc import *
+from .up_enc import *
+from .up_gsnet import *
 from .blur_detect import *
 def get_segmentation_model(name, **kwargs):
     from .fcn import get_fcn
@@ -83,5 +85,9 @@ def get_segmentation_model(name, **kwargs):
         'fcn_fpn_2048': get_fcn_fpn_2048,
         'up_fcn_2048': get_up_fcn_2048,
         'fpn_gsnet': get_fpn_gsnet,
+
+        'fpn_enc': get_fpn_enc,
+        'up_enc': get_up_enc,
+        'up_gsnet': get_up_gsnet,
     }
     return models[name.lower()](**kwargs)

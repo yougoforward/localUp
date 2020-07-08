@@ -7,14 +7,14 @@ import torch.nn.functional as F
 from .fcn import FCNHead
 from .base import BaseNet
 
-__all__ = ['fpn_gsnet', 'get_fpn_gsnet']
+__all__ = ['up_gsnet', 'get_up_gsnet']
 
 
-class fpn_gsnet(BaseNet):
+class up_gsnet(BaseNet):
     def __init__(self, nclass, backbone, aux=True, se_loss=False, norm_layer=nn.BatchNorm2d, **kwargs):
-        super(fpn_gsnet, self).__init__(nclass, backbone, aux, se_loss, norm_layer=norm_layer, **kwargs)
+        super(up_gsnet, self).__init__(nclass, backbone, aux, se_loss, norm_layer=norm_layer, **kwargs)
 
-        self.head = fpn_gsnetHead(2048, nclass, norm_layer, se_loss, jpu=kwargs['jpu'], up_kwargs=self._up_kwargs)
+        self.head = up_gsnetHead(2048, nclass, norm_layer, se_loss, jpu=kwargs['jpu'], up_kwargs=self._up_kwargs)
         if aux:
             self.auxlayer = FCNHead(1024, nclass, norm_layer)
 
@@ -32,10 +32,10 @@ class fpn_gsnet(BaseNet):
 
 
 
-class fpn_gsnetHead(nn.Module):
+class up_gsnetHead(nn.Module):
     def __init__(self, in_channels, out_channels, norm_layer, se_loss, jpu=False, up_kwargs=None,
                  atrous_rates=(12, 24, 36)):
-        super(fpn_gsnetHead, self).__init__()
+        super(up_gsnetHead, self).__init__()
         self.se_loss = se_loss
         inter_channels = in_channels // 4
 
@@ -44,9 +44,9 @@ class fpn_gsnetHead(nn.Module):
         if self.se_loss:
             self.selayer = nn.Linear(inter_channels, out_channels)
 
-        # self.localUp2=localUp(256, in_channels, norm_layer, up_kwargs)
-        self.localUp3=localUp(512, in_channels, norm_layer, up_kwargs)
-        self.localUp4=localUp(1024, in_channels, norm_layer, up_kwargs)
+        # self.localUp2=localUp(256, 512, norm_layer, up_kwargs)
+        self.localUp3=localUp(512, 1024, norm_layer, up_kwargs)
+        self.localUp4=localUp(1024, 2048, norm_layer, up_kwargs)
     def forward(self, c1,c2,c3,c4,c20,c30,c40):
         out = self.localUp4(c3, c4)
         out = self.localUp3(c2, out)
@@ -55,20 +55,37 @@ class fpn_gsnetHead(nn.Module):
         return self.conv6(out)
 
 class localUp(nn.Module):
-    def __init__(self, in_channels, out_channels, norm_layer, up_kwargs):
+    def __init__(self, in_channels1, in_channels2, norm_layer, up_kwargs):
         super(localUp, self).__init__()
-        self.connect = nn.Sequential(nn.Conv2d(in_channels, out_channels, 1, padding=0, dilation=1, bias=False),
-                                   norm_layer(out_channels),
-                                   nn.ReLU())
+        self.key_dim = in_channels1//8
+        # self.refine = nn.Sequential(nn.Conv2d(256, 64, 3, padding=2, dilation=2, bias=False),
+        #                            norm_layer(64),
+        #                            nn.ReLU(),
+        #                            nn.Conv2d(64, 64, 3, padding=2, dilation=2, bias=False),
+        #                            norm_layer(64),
+        #                            nn.ReLU())
+        self.refine = nn.Sequential(nn.Conv2d(in_channels1, self.key_dim, 1, padding=0, dilation=1, bias=False),
+                                   norm_layer(in_channels1//8))
+        self.refine2 = nn.Sequential(nn.Conv2d(in_channels2, self.key_dim, 1, padding=0, dilation=1, bias=False),
+                                   norm_layer(in_channels1//8)) 
         self._up_kwargs = up_kwargs
 
 
 
-    def forward(self, c1,c2):
+    def forward(self, c1,c2,out):
         n,c,h,w =c1.size()
-        c1 = self.connect(c1) # n, 64, h, w
+        c1 = self.refine(c1) # n, 64, h, w
         c2 = F.interpolate(c2, (h,w), **self._up_kwargs)
-        out = c1+c2
+        c2 = self.refine2(c2)
+
+        unfold_up_c2 = unfold(c2, 3, 2, 2, 1).view(n, -1, 3*3, h*w)
+        # torch.nn.functional.unfold(input, kernel_size, dilation=1, padding=0, stride=1)
+        energy = torch.matmul(c1.view(n, -1, 1, h*w).permute(0,3,2,1), unfold_up_c2.permute(0,3,1,2)) #n,h*w,1,3x3
+        att = torch.softmax(energy, dim=-1)
+        out = F.interpolate(out, (h,w), **self._up_kwargs)
+        unfold_out = unfold(out, 3, 2, 2, 1).view(n, -1, 3*3, h*w)
+        out = torch.matmul(att, unfold_out.permute(0,3,2,1)).permute(0,3,2,1).view(n,-1,h,w)
+
         return out
 
 def gsnetConv(in_channels, out_channels, atrous_rate, norm_layer):
@@ -168,11 +185,11 @@ class GSF_Module(nn.Module):
         out = torch.cat([out, gp.expand(n,c,h,w)], dim=1)
         return out, gp
 
-def get_fpn_gsnet(dataset='pascal_voc', backbone='resnet50', pretrained=False,
+def get_up_gsnet(dataset='pascal_voc', backbone='resnet50', pretrained=False,
                  root='~/.encoding/models', **kwargs):
     # infer number of classes
     from ..datasets import datasets
-    model = fpn_gsnet(datasets[dataset.lower()].NUM_CLASS, backbone=backbone, root=root, **kwargs)
+    model = up_gsnet(datasets[dataset.lower()].NUM_CLASS, backbone=backbone, root=root, **kwargs)
     if pretrained:
         raise NotImplementedError
 
