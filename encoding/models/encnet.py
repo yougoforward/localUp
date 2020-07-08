@@ -30,12 +30,11 @@ class EncNet(BaseNet):
 
     def forward(self, x):
         imsize = x.size()[2:]
-        features = self.base_forward(x)
-
-        x = list(self.head(*features))
+        c1, c2, c3, c4, c20, c30, c40 = self.base_forward(x)
+        x = self.head(c1,c2,c3,c4,c20,c30,c40)
         x[0] = F.interpolate(x[0], imsize, **self._up_kwargs)
         if self.aux:
-            auxout = self.auxlayer(features[2])
+            auxout = self.auxlayer(c3)
             auxout = F.interpolate(auxout, imsize, **self._up_kwargs)
             x.append(auxout)
         return tuple(x)
@@ -103,11 +102,11 @@ class EncHead(nn.Module):
         self.conv6 = nn.Sequential(nn.Dropout2d(0.1, False),
                                    nn.Conv2d(512, out_channels, 1))
 
-    def forward(self, *inputs):
-        feat = self.conv5(inputs[-1])
+    def forward(self, c1,c2,c3,c4,c20,c30,c40):
+        feat = self.conv5(c4)
         if self.lateral:
-            c2 = self.connect[0](inputs[1])
-            c3 = self.connect[1](inputs[2])
+            c2 = self.connect[0](c2)
+            c3 = self.connect[1](c3)
             feat = self.fusion(torch.cat([feat, c2, c3], 1))
         outs = list(self.encmodule(feat))
         outs[0] = self.conv6(outs[0])
