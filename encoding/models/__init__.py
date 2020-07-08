@@ -31,6 +31,8 @@ from .up_fcn_dilation_v3 import *
 from .up_fcn_dilation_s8plus import *
 
 from .fcn_fpn import *
+from .fcn_fpn2 import *
+
 from .fcn_fpn_2048 import *
 from .up_fcn_2048 import *
 
@@ -76,6 +78,7 @@ def get_segmentation_model(name, **kwargs):
         
         'blur_detect': get_blur_detect,
         'fcn_fpn': get_fcn_fpn,
+        'fcn_fpn2': get_fcn_fpn2,
         'fcn_fpn_s16': get_fcn_fpn_s16,
         'fcn_fpn_256': get_fcn_fpn_256,
         'fcn_fpn_nobn': get_fcn_fpn_nobn,
