@@ -49,11 +49,11 @@ class blur_detectHead(nn.Module):
         self.conv6 = nn.Sequential(nn.Dropout2d(0.1, False),
                                    nn.Conv2d(inter_channels*2, out_channels, 1))
 
-        self.localUp2=localUp(256, in_channels, norm_layer, up_kwargs)
+        # self.localUp2=localUp(256, in_channels, norm_layer, up_kwargs)
         self.localUp3=localUp(512, in_channels, norm_layer, up_kwargs)
         self.localUp4=localUp(1024, in_channels, norm_layer, up_kwargs)
 
-        self.denseaspp = DenseASPP(inter_channels, inter_channels, norm_layer)
+        self.denseaspp = DenseASPP(in_channels, inter_channels, norm_layer)
         self.pam0 = PAM_Module(in_dim=inter_channels, key_dim=inter_channels//8, value_dim=inter_channels, out_dim=inter_channels, norm_layer=norm_layer)
         self.gap = nn.Sequential(nn.AdaptiveAvgPool2d(1),
                             nn.Conv2d(in_channels, inter_channels, 1, bias=False),
