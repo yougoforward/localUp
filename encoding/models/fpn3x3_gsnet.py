@@ -7,14 +7,14 @@ import torch.nn.functional as F
 from .fcn import FCNHead
 from .base import BaseNet
 
-__all__ = ['fpn_gsnet', 'get_fpn_gsnet']
+__all__ = ['fpn3x3_gsnet', 'get_fpn3x3_gsnet']
 
 
-class fpn_gsnet(BaseNet):
+class fpn3x3_gsnet(BaseNet):
     def __init__(self, nclass, backbone, aux=True, se_loss=False, norm_layer=nn.BatchNorm2d, **kwargs):
-        super(fpn_gsnet, self).__init__(nclass, backbone, aux, se_loss, norm_layer=norm_layer, **kwargs)
+        super(fpn3x3_gsnet, self).__init__(nclass, backbone, aux, se_loss, norm_layer=norm_layer, **kwargs)
 
-        self.head = fpn_gsnetHead(2048, nclass, norm_layer, se_loss, jpu=kwargs['jpu'], up_kwargs=self._up_kwargs)
+        self.head = fpn3x3_gsnetHead(2048, nclass, norm_layer, se_loss, jpu=kwargs['jpu'], up_kwargs=self._up_kwargs)
         if aux:
             self.auxlayer = FCNHead(1024, nclass, norm_layer)
 
@@ -32,10 +32,10 @@ class fpn_gsnet(BaseNet):
 
 
 
-class fpn_gsnetHead(nn.Module):
+class fpn3x3_gsnetHead(nn.Module):
     def __init__(self, in_channels, out_channels, norm_layer, se_loss, jpu=False, up_kwargs=None,
                  atrous_rates=(12, 24, 36)):
-        super(fpn_gsnetHead, self).__init__()
+        super(fpn3x3_gsnetHead, self).__init__()
         self.se_loss = se_loss
         inter_channels = in_channels // 4
 
@@ -57,10 +57,15 @@ class fpn_gsnetHead(nn.Module):
 class localUp(nn.Module):
     def __init__(self, in_channels, out_channels, norm_layer, up_kwargs):
         super(localUp, self).__init__()
-        self.connect = nn.Sequential(nn.Conv2d(in_channels, out_channels, 1, padding=0, dilation=1, bias=False),
+        # self.connect = nn.Sequential(nn.Conv2d(in_channels, out_channels, 1, padding=0, dilation=1, bias=False),
+        #                            norm_layer(out_channels),
+        #                            nn.ReLU())
+        self.connect = nn.Sequential(nn.Conv2d(in_channels, in_channels, 3, padding=1, dilation=1, bias=False),
+                                   norm_layer(in_channels),
+                                   nn.ReLU(),
+                                   nn.Conv2d(in_channels, out_channels, 1, padding=0, dilation=1, bias=False),
                                    norm_layer(out_channels),
                                    nn.ReLU())
-
         self._up_kwargs = up_kwargs
 
 
@@ -169,11 +174,11 @@ class GSF_Module(nn.Module):
         out = torch.cat([out, gp.expand(n,c,h,w)], dim=1)
         return out, gp
 
-def get_fpn_gsnet(dataset='pascal_voc', backbone='resnet50', pretrained=False,
+def get_fpn3x3_gsnet(dataset='pascal_voc', backbone='resnet50', pretrained=False,
                  root='~/.encoding/models', **kwargs):
     # infer number of classes
     from ..datasets import datasets
-    model = fpn_gsnet(datasets[dataset.lower()].NUM_CLASS, backbone=backbone, root=root, **kwargs)
+    model = fpn3x3_gsnet(datasets[dataset.lower()].NUM_CLASS, backbone=backbone, root=root, **kwargs)
     if pretrained:
         raise NotImplementedError
 

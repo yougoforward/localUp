@@ -42,6 +42,8 @@ from .fcn_fpn_nobn import *
 from .fcn_fpn_s4 import *
 from .pano_fpn import *
 from .fpn_gsnet import *
+from .fpn3x3_gsnet import *
+
 from .fpn_enc import *
 from .up_enc import *
 from .up_gsnet import *
@@ -92,6 +94,7 @@ def get_segmentation_model(name, **kwargs):
         'fcn_fpn_2048': get_fcn_fpn_2048,
         'up_fcn_2048': get_up_fcn_2048,
         'fpn_gsnet': get_fpn_gsnet,
+        'fpn3x3_gsnet': get_fpn3x3_gsnet,
 
         'fpn_enc': get_fpn_enc,
         'up_enc': get_up_enc,
