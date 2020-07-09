@@ -40,7 +40,7 @@ class jpux_gsfHead(nn.Module):
         inter_channels = in_channels // 4
         self.jpu = JPU_X([512, 1024, 2048], width=inter_channels, norm_layer=norm_layer, up_kwargs=up_kwargs)
         self.project = nn.Sequential(nn.Conv2d(in_channels=inter_channels*4, out_channels=inter_channels, kernel_size=1, padding=0, bias=False),
-                            norm_layer(out_channels),
+                            norm_layer(inter_channels),
                             nn.ReLU(True))
 
         self.gap = nn.Sequential(nn.AdaptiveAvgPool2d(1),
