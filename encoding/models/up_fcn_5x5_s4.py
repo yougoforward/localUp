@@ -83,13 +83,13 @@ class localUp(nn.Module):
         c2 = interpolate(c2, (h,w), **self._up_kwargs)
         c2 = self.refine2(c2)
 
-        unfold_up_c2 = unfold(c2, 5, 1, 2, 1).view(n, -1, 5*5, h*w)
+        unfold_up_c2 = unfold(c2, 5, 1, 2, 1).permute(0,2,1).view(n, h*w, -1, 5*5)
         # torch.nn.functional.unfold(input, kernel_size, dilation=1, padding=0, stride=1)
-        energy = torch.matmul(c1.view(n, -1, 1, h*w).permute(0,3,2,1), unfold_up_c2.permute(0,3,1,2)) #n,h*w,1,3x3
+        energy = torch.matmul(c1.view(n, -1, h*w).permute(0,2,1).unsqueeze(2), unfold_up_c2).squeeze(2) #n,h*w,k*k
         att = torch.softmax(energy, dim=-1)
         out = interpolate(out, (h,w), **self._up_kwargs)
-        unfold_out = unfold(out, 5, 1, 2, 1).view(n, -1, 5*5, h*w)
-        out = torch.matmul(att, unfold_out.permute(0,3,2,1)).permute(0,3,2,1).view(n,-1,h,w)
+        unfold_out = unfold(out, 5, 1, 2, 1).permute(0,2,1).view(n, h*w, -1, 5*5)
+        out = torch.matmul(unfold_out, att.unsqueeze(3)).squeeze(3).permute(0,2,1).view(n,-1,h,w)
 
         return out
 

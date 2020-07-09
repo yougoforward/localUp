@@ -76,17 +76,16 @@ class localUp(nn.Module):
     def forward(self, c1,c2,out):
         n,c,h,w =c1.size()
         c1 = self.refine(c1) # n, 64, h, w
-        c2 = F.interpolate(c2, (h,w), **self._up_kwargs)
+        c2 = interpolate(c2, (h,w), **self._up_kwargs)
         c2 = self.refine2(c2)
 
-        unfold_up_c2 = unfold(c2, 3, 2, 2, 1).view(n, -1, 3*3, h*w)
+        unfold_up_c2 = unfold(c2, 3, 2, 2, 1).permute(0,2,1).view(n, h*w, -1, 3*3)
         # torch.nn.functional.unfold(input, kernel_size, dilation=1, padding=0, stride=1)
-        energy = torch.matmul(c1.view(n, -1, 1, h*w).permute(0,3,2,1), unfold_up_c2.permute(0,3,1,2)) #n,h*w,1,3x3
+        energy = torch.matmul(c1.view(n, -1, h*w).permute(0,2,1).unsqueeze(2), unfold_up_c2).squeeze(2) #n,h*w,3x3
         att = torch.softmax(energy, dim=-1)
-        out = F.interpolate(out, (h,w), **self._up_kwargs)
-        unfold_out = unfold(out, 3, 2, 2, 1).view(n, -1, 3*3, h*w)
-        out = torch.matmul(att, unfold_out.permute(0,3,2,1)).permute(0,3,2,1).view(n,-1,h,w)
-
+        out = interpolate(out, (h,w), **self._up_kwargs)
+        unfold_out = unfold(out, 3, 2, 2, 1).permute(0,2,1).view(n, h*w, -1, 3*3)
+        out = torch.matmul(unfold_out, att.unsqueeze(3)).squeeze(3).permute(0,2,1).view(n,-1,h,w)
         return out
 
 def gsnetConv(in_channels, out_channels, atrous_rate, norm_layer):
