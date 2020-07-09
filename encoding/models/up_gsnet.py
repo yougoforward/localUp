@@ -3,6 +3,7 @@ from __future__ import division
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from torch.nn.functional import interpolate, unfold
 
 from .fcn import FCNHead
 from .base import BaseNet
