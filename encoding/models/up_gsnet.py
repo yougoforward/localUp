@@ -48,9 +48,9 @@ class up_gsnetHead(nn.Module):
         self.localUp3=localUp(512, 1024, norm_layer, up_kwargs)
         self.localUp4=localUp(1024, 2048, norm_layer, up_kwargs)
     def forward(self, c1,c2,c3,c4,c20,c30,c40):
-        out = self.localUp4(c3, c4)
-        out = self.localUp3(c2, out)
-        # out = self.localUp2(c1, out)
+        out = self.localUp4(c3, c40, c4)
+        out = self.localUp3(c2, c30, out)
+        # out = self.localUp2(c1, c20, out)
         out, gp = self.gsf(out)
         return self.conv6(out)
 
