@@ -39,7 +39,7 @@ class jpux_gsfHead(nn.Module):
         super(jpux_gsfHead, self).__init__()
         inter_channels = in_channels // 4
         self.jpu = JPU_X([512, 1024, 2048], width=inter_channels, norm_layer=norm_layer, up_kwargs=up_kwargs)
-        self.project = nn.Sequential(nn.Conv2d(in_channels=inter_channels*4, out_channels=inter_channels, kernel_size=1, padding=0, bias=False),
+        self.conv5 = nn.Sequential(nn.Conv2d(in_channels=inter_channels*4, out_channels=inter_channels, kernel_size=1, padding=0, bias=False),
                             norm_layer(inter_channels),
                             nn.ReLU(True))
 
@@ -52,13 +52,13 @@ class jpux_gsfHead(nn.Module):
                             nn.Sigmoid())
         self.gff = PAM_Module(in_dim=inter_channels, key_dim=inter_channels//8,value_dim=inter_channels,out_dim=inter_channels,norm_layer=norm_layer)
 
-        self.conv8 = nn.Sequential(nn.Dropout2d(0.1), nn.Conv2d(2*inter_channels, out_channels, 1))
+        self.conv6 = nn.Sequential(nn.Dropout2d(0.1), nn.Conv2d(2*inter_channels, out_channels, 1))
 
 
     def forward(self, c1,c2,c3,c4,c20,c30,c40):
         x = c4
         c1, c2, c3, c4 = self.jpu(c1, c2, c3, c4)
-        out = self.project(c4)
+        out = self.conv5(c4)
         #gp
         gp = self.gap(x)        
         # se
@@ -70,7 +70,7 @@ class jpux_gsfHead(nn.Module):
 
         out = torch.cat([out, gp.expand_as(out)], dim=1)
 
-        return self.conv8(out)
+        return self.conv6(out)
 
 
 def gsnetConv(in_channels, out_channels, atrous_rate, norm_layer):
