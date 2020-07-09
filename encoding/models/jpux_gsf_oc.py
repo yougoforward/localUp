@@ -103,7 +103,7 @@ class ocr_Module(nn.Module):
         n,c,h,w = x.size()
         att = sigmoid_att.view(n,self.nclass, h*w).permute(0,2,1) # n,hw, nclass
         image_centers = torch.bmm(x.view(n, c, h*w), att/torch.sum(att, 1, keepdim=True).expand_as(att)) #n, c, nclass
-        class_centers = torch.cat([self.dataset_centers.expand_as(image_centers), image_centers], dim=1) # n, c, 2*nclass
+        class_centers = torch.cat([self.dataset_centers.expand_as(image_centers), image_centers], dim=2) # n, c, 2*nclass
 
         proj_query = self.query_conv(x).view(n, -1, h*w).permute(0, 2, 1)
         proj_key = self.key_conv(class_centers).view(n,-1, self.nclass*2)
