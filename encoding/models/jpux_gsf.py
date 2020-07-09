@@ -20,10 +20,11 @@ class jpux_gsf(BaseNet):
 
     def forward(self, x):
         _, _, h, w = x.size()
-        _, _, c3, c4 = self.base_forward(x)
+        # _, _, c3, c4 = self.base_forward(x)
+        # x = list(self.head(c4))
+
         c1, c2, c3, c4, c20, c30, c40 = self.base_forward(x)
         x = list(self.head(c1,c2,c3,c4,c20,c30,c40))
-        # x = list(self.head(c4))
         x[0] = F.interpolate(x[0], (h, w), **self._up_kwargs)
         if self.aux:
             auxout = self.auxlayer(c3)
