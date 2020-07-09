@@ -7,14 +7,14 @@ import torch.nn.functional as F
 from .fcn import FCNHead
 from .base import BaseNet
 
-__all__ = ['jpux_gsf', 'get_jpux_gsf']
+__all__ = ['jpux_gsf_oc', 'get_jpux_gsf_oc']
 
 
-class jpux_gsf(BaseNet):
+class jpux_gsf_oc(BaseNet):
     def __init__(self, nclass, backbone, aux=True, se_loss=False, norm_layer=nn.BatchNorm2d, **kwargs):
-        super(jpux_gsf, self).__init__(nclass, backbone, aux, se_loss, norm_layer=norm_layer, **kwargs)
+        super(jpux_gsf_oc, self).__init__(nclass, backbone, aux, se_loss, norm_layer=norm_layer, **kwargs)
 
-        self.head = jpux_gsfHead(2048, nclass, norm_layer, se_loss, jpu=kwargs['jpu'], up_kwargs=self._up_kwargs)
+        self.head = jpux_gsf_ocHead(2048, nclass, norm_layer, se_loss, jpu=kwargs['jpu'], up_kwargs=self._up_kwargs)
         if aux:
             self.auxlayer = FCNHead(1024, nclass, norm_layer)
 
@@ -24,8 +24,10 @@ class jpux_gsf(BaseNet):
         # x = list(self.head(c4))
 
         c1, c2, c3, c4, c20, c30, c40 = self.base_forward(x)
-        x = [self.head(c1,c2,c3,c4,c20,c30,c40)]
+        x = list(self.head(c1,c2,c3,c4,c20,c30,c40))
         x[0] = F.interpolate(x[0], (h, w), **self._up_kwargs)
+        x[1] = F.interpolate(x[1], (h, w), **self._up_kwargs)
+
         if self.aux:
             auxout = self.auxlayer(c3)
             auxout = F.interpolate(auxout, (h, w), **self._up_kwargs)
@@ -33,10 +35,10 @@ class jpux_gsf(BaseNet):
         return tuple(x)
 
 
-class jpux_gsfHead(nn.Module):
+class jpux_gsf_ocHead(nn.Module):
     def __init__(self, in_channels, out_channels, norm_layer, se_loss, jpu=False, up_kwargs=None,
                  atrous_rates=(12, 24, 36)):
-        super(jpux_gsfHead, self).__init__()
+        super(jpux_gsf_ocHead, self).__init__()
         inter_channels = in_channels // 4
         self.jpu = JPU_X([512, 1024, 2048], width=inter_channels, norm_layer=norm_layer, up_kwargs=up_kwargs)
         self.conv5 = nn.Sequential(nn.Conv2d(in_channels=inter_channels*4, out_channels=inter_channels, kernel_size=1, padding=0, bias=False),
@@ -55,10 +57,7 @@ class jpux_gsfHead(nn.Module):
         self.gff = PAM_Module(in_dim=inter_channels, key_dim=inter_channels//8,value_dim=inter_channels,out_dim=inter_channels,norm_layer=norm_layer)
 
         self.conv6 = nn.Sequential(nn.Dropout2d(0.1), nn.Conv2d(2*inter_channels, out_channels, 1))
-        self.conv62 = nn.Sequential(nn.Dropout2d(0.1), nn.Conv2d(2*inter_channels, out_channels, 1))
-
-        self.nclass = out_channels
-        self.dataset_centers = nn.Parameter(torch.zeros(inter_channels, self.nclass))
+        self.ocr = ocr_Module(in_dim=inter_channels, key_dim=inter_channels//8,value_dim=inter_channels,out_dim=out_channels,norm_layer=norm_layer)
     def forward(self, c1,c2,c3,c4,c20,c30,c40):
         x = c4
         c1, c2, c3, c4 = self.jpu(c1, c2, c3, c4)
@@ -70,27 +69,52 @@ class jpux_gsfHead(nn.Module):
         out = out + se*out
 
         #non-local
-        out1 = self.gff(out) #n,c,h,w
-        out = torch.cat([out1, gp.expand_as(out)], dim=1)
+        out = self.gff(out) #n,c,h,w
 
+        # object context 
+        out, sigmoid_pred, center_pred =self.ocr(out, gp)
+        return self.conv6(out), sigmoid_pred, center_pred
 
+class ocr_Module(nn.Module):
+    """ Position attention module"""
+    #Ref from SAGAN
+    def __init__(self, in_dim, key_dim, value_dim, out_dim, norm_layer):
+        super(ocr_Module, self).__init__()
+        self.chanel_in = in_dim
+
+        self.query_conv = nn.Conv2d(in_channels=in_dim, out_channels=key_dim, kernel_size=1)
+        self.key_conv = nn.Conv1d(in_channels=in_dim, out_channels=key_dim, kernel_size=1)
+
+        self.softmax = nn.Softmax(dim=-1)
+        self.conv62 = nn.Sequential(nn.Dropout2d(0.1), nn.Conv2d(2*in_dim, out_dim, 1))
+        self.nclass = out_dim
+        self.dataset_centers = nn.Parameter(torch.zeros(in_dim, self.nclass))
+        self.center_pred = nn.Sequential(nn.Dropout2d(0.1), nn.Conv1d(in_dim, out_dim, 1))
+
+        self.project = nn.Sequential(nn.Conv2d(in_channels=in_dim*2, out_channels=value_dim, kernel_size=1, padding=0, bias=False),
+                            norm_layer(value_dim),
+                            nn.ReLU(True))
+    def forward(self, x, gp):
+        out = torch.cat([x, gp.expand_as(x)], dim=1)
         # object context dictionary
-        # out2 = self.conv52(c4)
         sigmoid_pred = self.conv62(out)
         sigmoid_att = torch.sigmoid(sigmoid_pred) #n,nclass,h,w
         # object center
-        n,c,h,w = out1.size()
+        n,c,h,w = x.size()
         att = sigmoid_att.view(n,self.nclass, h*w).permute(0,2,1) # n,hw, nclass
-        image_centers = torch.bmm(out1.view(n, c, h*w), att/torch.sum(att, 1, keedim=True).expand_as(att)) #n, c, nclass
+        image_centers = torch.bmm(x.view(n, c, h*w), att/torch.sum(att, 1, keedim=True).expand_as(att)) #n, c, nclass
         class_centers = torch.cat([self.dataset_centers.expand_as(image_centers), image_centers], dim=1) # n, c, 2*nclass
 
+        proj_query = self.query_conv(x).view(n, -1, h*w).permute(0, 2, 1)
+        proj_key = self.key_conv(class_centers).view(n,-1, self.nclass*2)
+        energy = torch.bmm(proj_query, proj_key) #n, h*w, 2*nclass
+        attention = self.softmax(energy)
+        proj_value = torch.bmm(class_centers, attention.permute(0,2,1)).view(n, c, h, w)
         
+        out = self.project(torch.cat([x, proj_value], dim=1))
 
-
-
-
-
-        return self.conv6(out)
+        out = torch.cat([out, gp.expand_as(x)], dim=1)
+        return out, sigmoid_pred ,self.center_pred(self.dataset_centers.unsqueeze(0))
 
 
 def gsnetConv(in_channels, out_channels, atrous_rate, norm_layer):
@@ -106,11 +130,11 @@ def gsnetConv(in_channels, out_channels, atrous_rate, norm_layer):
     return block
 
 
-def get_jpux_gsf(dataset='pascal_voc', backbone='resnet50', pretrained=False,
+def get_jpux_gsf_oc(dataset='pascal_voc', backbone='resnet50', pretrained=False,
                  root='~/.encoding/models', **kwargs):
     # infer number of classes
     from ..datasets import datasets
-    model = jpux_gsf(datasets[dataset.lower()].NUM_CLASS, backbone=backbone, root=root, **kwargs)
+    model = jpux_gsf_oc(datasets[dataset.lower()].NUM_CLASS, backbone=backbone, root=root, **kwargs)
     if pretrained:
         raise NotImplementedError
 
