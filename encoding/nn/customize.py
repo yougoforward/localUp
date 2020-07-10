@@ -103,7 +103,7 @@ class SegmentationLosses_oc(CrossEntropyLoss):
             onehot_label = F.one_hot(target_cp, num_classes =self.nclass).float()
             loss2 = self.bce(pred2[valid.expand(n,c,h,w)], onehot_label.permute(0,3,1,2)[valid.expand(n,c,h,w)])
 
-            target3 = torch.arange(0, self.nclass).unsqueeze(0)
+            target3 = torch.arange(0, self.nclass).unsqueeze(0).cuda()
             loss3 = super(SegmentationLosses_oc, self).forward(pred3, target3)
 
             loss4 = super(SegmentationLosses_oc, self).forward(pred4, target)
