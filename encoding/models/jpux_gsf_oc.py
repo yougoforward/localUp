@@ -69,7 +69,7 @@ class jpux_gsf_ocHead(nn.Module):
         out = out + se*out
 
         #non-local
-        out = self.gff(out) #n,c,h,w
+        # out = self.gff(out) #n,c,h,w
 
         # object context 
         out, sigmoid_pred, center_pred =self.ocr(out, gp)
