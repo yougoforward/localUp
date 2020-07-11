@@ -9,6 +9,7 @@ import torch.utils.data as data
 import numpy
 from PIL import Image, ImageOps, ImageFilter
 from tqdm import tqdm
+import torchvision.transforms as transforms
 
 from .base import BaseDataset
 
@@ -28,7 +29,7 @@ class Blur2Segmentation(BaseDataset):
         # train/val/test splits are pre-cut
         _splits_dir = os.path.join(_voc_root, 'splits')
         if self.split == 'train':
-            _split_f = os.path.join(_splits_dir, 'train.txt')
+            _split_f = os.path.join(_splits_dir, 'train_aug.txt')
         elif self.split == 'val':
             _split_f = os.path.join(_splits_dir, 'val.txt')
         elif self.split == 'test':
@@ -74,9 +75,9 @@ class Blur2Segmentation(BaseDataset):
         return img, target
     def _sync_transform(self, img, mask):
         # random mirror
-        if random.random() < 0.5:
-            img = img.transpose(Image.FLIP_LEFT_RIGHT)
-            mask = mask.transpose(Image.FLIP_LEFT_RIGHT)
+        # if random.random() < 0.5:
+        #     img = img.transpose(Image.FLIP_LEFT_RIGHT)
+        #     mask = mask.transpose(Image.FLIP_LEFT_RIGHT)
         crop_size = self.crop_size
         # random scale (short edge from 480 to 720)
         short_size = random.randint(int(self.base_size*0.5), int(self.base_size*2.0))
@@ -90,8 +91,11 @@ class Blur2Segmentation(BaseDataset):
         img = img.resize((ow, oh), Image.BILINEAR)
         mask = mask.resize((ow, oh), Image.NEAREST)
 
+        colorjitter = transforms.ColorJitter(brightness=0.1, contrast=0.5, saturation=0.5, hue=0.1)
+        img = colorjitter(img)
+
         # random rotate
-        img, mask = RandomRotation(img, mask, 45, is_continuous=False)
+        # img, mask = RandomRotation(img, mask, 45, is_continuous=False)
 
         # pad crop
         if short_size < crop_size:
