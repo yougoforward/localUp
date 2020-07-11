@@ -88,7 +88,7 @@ class ocr_Module(nn.Module):
         self.softmax = nn.Softmax(dim=-1)
         self.conv62 = nn.Sequential(nn.Dropout2d(0.1), nn.Conv2d(2*in_dim, out_dim, 1))
         self.nclass = out_dim
-        # self.dataset_centers = nn.Parameter(torch.zeros(in_dim, self.nclass))
+        self.dataset_centers = nn.Parameter(torch.zeros(in_dim, self.nclass))
         self.center_pred = nn.Sequential(nn.Dropout2d(0.1), nn.Conv1d(in_dim, out_dim, 1))
 
         self.project = nn.Sequential(nn.Conv2d(in_channels=in_dim*2, out_channels=value_dim, kernel_size=1, padding=0, bias=False),
@@ -117,6 +117,7 @@ class ocr_Module(nn.Module):
 
         out = torch.cat([out, gp.expand_as(x)], dim=1)
         return out, sigmoid_pred ,self.center_pred(self.dataset_centers.unsqueeze(0))
+
 
 
 def gsnetConv(in_channels, out_channels, atrous_rate, norm_layer):
