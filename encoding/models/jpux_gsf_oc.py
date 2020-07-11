@@ -54,7 +54,7 @@ class jpux_gsf_ocHead(nn.Module):
         self.se = nn.Sequential(
                             nn.Conv2d(inter_channels, inter_channels, 1, bias=True),
                             nn.Sigmoid())
-        self.gff = PAM_Module(in_dim=inter_channels, key_dim=inter_channels//8,value_dim=inter_channels,out_dim=inter_channels,norm_layer=norm_layer)
+        # self.gff = PAM_Module(in_dim=inter_channels, key_dim=inter_channels//8,value_dim=inter_channels,out_dim=inter_channels,norm_layer=norm_layer)
 
         self.conv6 = nn.Sequential(nn.Dropout2d(0.1), nn.Conv2d(2*inter_channels, out_channels, 1))
         self.ocr = ocr_Module(in_dim=inter_channels, key_dim=inter_channels//8,value_dim=inter_channels,out_dim=out_channels,norm_layer=norm_layer)
@@ -102,7 +102,8 @@ class ocr_Module(nn.Module):
         # object center
         n,c,h,w = x.size()
         att = sigmoid_att.view(n,self.nclass, h*w).permute(0,2,1) # n,hw, nclass
-        image_centers = torch.bmm(x.view(n, c, h*w), att/torch.sum(att, 1, keepdim=True).expand_as(att)) #n, c, nclass
+        att_sum = torch.sum(att, 1, keepdim=True).expand_as(att)
+        image_centers = torch.bmm(x.view(n, c, h*w), att/att_sum) #n, c, nclass
         class_centers = torch.cat([self.dataset_centers.expand_as(image_centers), image_centers], dim=2) # n, c, 2*nclass
 
         proj_query = self.query_conv(x).view(n, -1, h*w).permute(0, 2, 1)
