@@ -54,7 +54,7 @@ class jpux_gsf_ocHead(nn.Module):
         self.se = nn.Sequential(
                             nn.Conv2d(inter_channels, inter_channels, 1, bias=True),
                             nn.Sigmoid())
-        # self.gff = PAM_Module(in_dim=inter_channels, key_dim=inter_channels//8,value_dim=inter_channels,out_dim=inter_channels,norm_layer=norm_layer)
+        self.gff = PAM_Module(in_dim=inter_channels, key_dim=inter_channels//8,value_dim=inter_channels,out_dim=inter_channels,norm_layer=norm_layer)
 
         self.conv6 = nn.Sequential(nn.Dropout2d(0.1), nn.Conv2d(2*inter_channels, out_channels, 1))
         self.ocr = ocr_Module(in_dim=inter_channels, key_dim=inter_channels//8,value_dim=inter_channels,out_dim=out_channels,norm_layer=norm_layer)
@@ -69,7 +69,7 @@ class jpux_gsf_ocHead(nn.Module):
         out = out + se*out
 
         #non-local
-        # out = self.gff(out) #n,c,h,w
+        out = self.gff(out) #n,c,h,w
 
         # object context 
         out, sigmoid_pred, center_pred =self.ocr(out, gp)
@@ -88,7 +88,7 @@ class ocr_Module(nn.Module):
         self.softmax = nn.Softmax(dim=-1)
         self.conv62 = nn.Sequential(nn.Dropout2d(0.1), nn.Conv2d(2*in_dim, out_dim, 1))
         self.nclass = out_dim
-        self.dataset_centers = nn.Parameter(torch.zeros(in_dim, self.nclass))
+        # self.dataset_centers = nn.Parameter(torch.zeros(in_dim, self.nclass))
         self.center_pred = nn.Sequential(nn.Dropout2d(0.1), nn.Conv1d(in_dim, out_dim, 1))
 
         self.project = nn.Sequential(nn.Conv2d(in_channels=in_dim*2, out_channels=value_dim, kernel_size=1, padding=0, bias=False),
@@ -104,10 +104,11 @@ class ocr_Module(nn.Module):
         att = sigmoid_att.view(n,self.nclass, h*w).permute(0,2,1) # n,hw, nclass
         att_sum = torch.sum(att, 1, keepdim=True).expand_as(att)
         image_centers = torch.bmm(x.view(n, c, h*w), att/att_sum) #n, c, nclass
-        class_centers = torch.cat([self.dataset_centers.expand_as(image_centers), image_centers], dim=2) # n, c, 2*nclass
+        # class_centers = torch.cat([self.dataset_centers.expand_as(image_centers), image_centers], dim=2) # n, c, 2*nclass
 
+        class_centers = image_centers
         proj_query = self.query_conv(x).view(n, -1, h*w).permute(0, 2, 1)
-        proj_key = self.key_conv(class_centers).view(n,-1, self.nclass*2)
+        proj_key = self.key_conv(class_centers).view(n,-1, self.nclass) #n,c, 2*nclass
         energy = torch.bmm(proj_query, proj_key) #n, h*w, 2*nclass
         attention = self.softmax(energy)
         proj_value = torch.bmm(class_centers, attention.permute(0,2,1)).view(n, c, h, w)
