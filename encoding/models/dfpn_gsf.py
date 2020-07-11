@@ -72,7 +72,7 @@ class dfpn_gsfHead(nn.Module):
                                    norm_layer(inter_channels),
                                    nn.ReLU(),
                                    )
-        self.dconv4 = nn.Sequential(nn.Conv2d(in_channels, inter_channels, 3, padding=8, dilation=8, bias=False),
+        self.dconv4 = nn.Sequential(nn.Conv2d(inter_channels, inter_channels, 3, padding=8, dilation=8, bias=False),
                                    norm_layer(inter_channels),
                                    nn.ReLU(),
                                    )
@@ -88,7 +88,7 @@ class dfpn_gsfHead(nn.Module):
         # out = self.localUp2(c1, out)
         
 
-        p4 = self.dconv4(c4)
+        p4 = self.dconv4(out4)
         p4 = F.interpolate(p4, (h,w), **self._up_kwargs)
         p3 = self.dconv3(out3)
         p3 = F.interpolate(p3, (h,w), **self._up_kwargs)
