@@ -54,6 +54,7 @@ from .fpn2_gsnet import *
 from .dfpn_gsf import *
 
 from .blur_detect import *
+from .blur_dfpn_gsf import *
 def get_segmentation_model(name, **kwargs):
     from .fcn import get_fcn
     models = {
@@ -85,6 +86,7 @@ def get_segmentation_model(name, **kwargs):
         'up_fcn_dilation_s8plus': get_up_fcn_dilation_s8plus,
         
         'blur_detect': get_blur_detect,
+        'blur_dfpn_gsf': get_blur_dfpn_gsf,
         'fcn_fpn': get_fcn_fpn,
         'fcn_fpn2': get_fcn_fpn2,
         'fcn_fpn_s16': get_fcn_fpn_s16,
