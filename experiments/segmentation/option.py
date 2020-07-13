@@ -105,7 +105,7 @@ class Options():
                 'pcontext': 80,
                 'ade20k': 120,
                 'cocostuff': 180,
-                'focus_shi': 30,
+                'focus_shi': 320,
             }
             args.epochs = epoches[args.dataset.lower()]
         if args.batch_size is None:
