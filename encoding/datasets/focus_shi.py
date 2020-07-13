@@ -95,8 +95,10 @@ class Blur2Segmentation(BaseDataset):
         # img = colorjitter(img)
 
         # random rotate
-
-        img, mask = RandomRotation(img, mask, 45, is_continuous=False)
+        # img, mask = RandomRotation(img, mask, 45, is_continuous=False)
+        theta =  np.random.randint(0, 8)*45
+        img=img.rotate(theta, PIL.Image.BILINEAR, fillcolor=(0,0,0))
+        mask=mask.rotate(theta, PIL.Image.NEAREST, fillcolor=255)
 
         # pad crop
         if short_size < crop_size:
