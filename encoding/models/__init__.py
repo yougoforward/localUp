@@ -52,6 +52,7 @@ from .jpux_gsf import *
 from .jpux_gsf_oc import *
 from .fpn2_gsnet import *
 from .dfpn_gsf import *
+from .dfpn import *
 
 from .blur_detect import *
 from .blur_dfpn_gsf import *
@@ -108,5 +109,6 @@ def get_segmentation_model(name, **kwargs):
         'jpux_gsf_oc': get_jpux_gsf_oc,
         'fpn2_gsnet': get_fpn2_gsnet,
         'dfpn_gsf': get_dfpn_gsf,
+        'dfpn': get_dfpn,
     }
     return models[name.lower()](**kwargs)
