@@ -29,7 +29,7 @@ class Blur2Segmentation(BaseDataset):
         # train/val/test splits are pre-cut
         _splits_dir = os.path.join(_voc_root, 'splits')
         if self.split == 'train':
-            _split_f = os.path.join(_splits_dir, 'train.txt')
+            _split_f = os.path.join(_splits_dir, 'train_ori.txt')
         elif self.split == 'val':
             _split_f = os.path.join(_splits_dir, 'val.txt')
         elif self.split == 'test':
