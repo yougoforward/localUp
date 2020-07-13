@@ -91,8 +91,8 @@ class Blur2Segmentation(BaseDataset):
         img = img.resize((ow, oh), Image.BILINEAR)
         mask = mask.resize((ow, oh), Image.NEAREST)
 
-        colorjitter = transforms.ColorJitter(brightness=0.1, contrast=0.5, saturation=0.5, hue=0.1)
-        img = colorjitter(img)
+        # colorjitter = transforms.ColorJitter(brightness=0.1, contrast=0.5, saturation=0.5, hue=0.1)
+        # img = colorjitter(img)
 
         # random rotate
         img, mask = RandomRotation(img, mask, 45, is_continuous=False)
