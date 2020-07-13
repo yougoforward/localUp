@@ -39,7 +39,7 @@ class blur_dfpn_gsfHead(nn.Module):
         self.se_loss = se_loss
         self._up_kwargs = up_kwargs
 
-        inter_channels = in_channels // 8
+        inter_channels = in_channels // 16
         self.conv5 = nn.Sequential(nn.Conv2d(in_channels, inter_channels, 3, padding=1, bias=False),
                                    norm_layer(inter_channels),
                                    nn.ReLU(),
