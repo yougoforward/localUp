@@ -95,6 +95,7 @@ class Blur2Segmentation(BaseDataset):
         # img = colorjitter(img)
 
         # random rotate
+        
         img, mask = RandomRotation(img, mask, 45, is_continuous=False)
 
         # pad crop
@@ -168,7 +169,7 @@ def RandomRotation(image, segmentation, angle_r, is_continuous=False):
     m = cv2.getRotationMatrix2D(center=(col/2, row/2), angle=rand_angle, scale=1)
 
     new_image = cv2.warpAffine(image, m, (col,row), flags=cv2.INTER_CUBIC, borderValue=0)
-    new_segmentation = cv2.warpAffine(segmentation, m, (col,row), flags=seg_interpolation, borderValue=0)
+    new_segmentation = cv2.warpAffine(segmentation, m, (col,row), flags=seg_interpolation, borderValue=255)
 
     new_image = Image.fromarray(cv2.cvtColor(new_image, cv2.COLOR_BGR2RGB))
     new_segmentation = Image.fromarray(new_segmentation)
