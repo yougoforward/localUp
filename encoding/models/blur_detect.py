@@ -41,7 +41,7 @@ class blur_detect(BaseNet):
 class blur_detectHead(nn.Module):
     def __init__(self, in_channels, out_channels, norm_layer, up_kwargs):
         super(blur_detectHead, self).__init__()
-        inter_channels = in_channels // 16
+        inter_channels = in_channels // 8
         self.conv5 = nn.Sequential(nn.Conv2d(in_channels, inter_channels, 3, padding=1, bias=False),
                                    norm_layer(inter_channels),
                                    nn.ReLU(),
