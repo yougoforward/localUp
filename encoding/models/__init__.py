@@ -54,6 +54,9 @@ from .fpn2_gsnet import *
 from .dfpn_gsf import *
 from .dfpn import *
 from .dfpn2_gsf import *
+from .dfpn2 import *
+from .dfpn3 import *
+from .dfpn3_gsf import *
 
 from .blur_detect import *
 from .blur_dfpn_gsf import *
@@ -112,5 +115,9 @@ def get_segmentation_model(name, **kwargs):
         'dfpn_gsf': get_dfpn_gsf,
         'dfpn': get_dfpn,
         'dfpn2_gsf': get_dfpn2_gsf,
+        'dfpn2': get_dfpn2,
+        'dfpn3_gsf': get_dfpn3_gsf,
+        'dfpn3': get_dfpn3,
+
     }
     return models[name.lower()](**kwargs)
