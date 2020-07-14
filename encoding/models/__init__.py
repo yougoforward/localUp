@@ -111,6 +111,6 @@ def get_segmentation_model(name, **kwargs):
         'fpn2_gsnet': get_fpn2_gsnet,
         'dfpn_gsf': get_dfpn_gsf,
         'dfpn': get_dfpn,
-        'dfpn2': get_dfpn2_gsf,
+        'dfpn2_gsf': get_dfpn2_gsf,
     }
     return models[name.lower()](**kwargs)
