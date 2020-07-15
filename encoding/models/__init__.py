@@ -49,6 +49,7 @@ from .up_enc import *
 from .up_gsnet import *
 from .gsnet import *
 from .jpux_gsf import *
+from .jpu_gsf import *
 from .jpux_gsf_oc import *
 from .fpn2_gsnet import *
 from .dfpn_gsf import *
@@ -112,6 +113,7 @@ def get_segmentation_model(name, **kwargs):
         'up_gsnet': get_up_gsnet,
         'gsnet': get_gsnetnet,
         'jpux_gsf': get_jpux_gsf,
+        'jpu_gsf': get_jpu_gsf,
         'jpux_gsf_oc': get_jpux_gsf_oc,
         'fpn2_gsnet': get_fpn2_gsnet,
         'dfpn_gsf': get_dfpn_gsf,
