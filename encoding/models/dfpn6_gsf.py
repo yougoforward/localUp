@@ -40,7 +40,7 @@ class dfpn6_gsfHead(nn.Module):
         self._up_kwargs = up_kwargs
 
         inter_channels = in_channels // 4
-        self.conv5 = nn.Sequential(nn.Conv2d(in_channels, inter_channels, 3, padding=, bias=False),
+        self.conv5 = nn.Sequential(nn.Conv2d(in_channels, inter_channels, 3, padding=1, bias=False),
                                    norm_layer(inter_channels),
                                    nn.ReLU(),
                                    )
@@ -60,11 +60,7 @@ class dfpn6_gsfHead(nn.Module):
         self.localUp4=localUp(1024, inter_channels, norm_layer, up_kwargs)
 
 
-        self.fuse2 = nn.Sequential(nn.Conv2d(inter_channels, inter_channels, 3, padding=1, dilation=1, bias=False),
-                                   norm_layer(inter_channels),
-                                   nn.ReLU(),
-                                   )
-        self.dconv2_1 = nn.Sequential(nn.Conv2d(inter_channels, inter_channels, 1, padding=0, dilation=1, bias=False),
+        self.dconv2_1 = nn.Sequential(nn.Conv2d(inter_channels, inter_channels, 3, padding=1, dilation=1, bias=False),
                                    norm_layer(inter_channels),
                                    nn.ReLU(),
                                    )
@@ -72,11 +68,7 @@ class dfpn6_gsfHead(nn.Module):
                                    norm_layer(inter_channels),
                                    nn.ReLU(),
                                    )
-        self.fuse3 = nn.Sequential(nn.Conv2d(inter_channels, inter_channels, 3, padding=1, dilation=1, bias=False),
-                                   norm_layer(inter_channels),
-                                   nn.ReLU(),
-                                   )
-        self.dconv3_1 = nn.Sequential(nn.Conv2d(inter_channels, inter_channels, 1, padding=0, dilation=1, bias=False),
+        self.dconv3_1 = nn.Sequential(nn.Conv2d(inter_channels, inter_channels, 3, padding=1, dilation=1, bias=False),
                                    norm_layer(inter_channels),
                                    nn.ReLU(),
                                    )
@@ -84,11 +76,8 @@ class dfpn6_gsfHead(nn.Module):
                                    norm_layer(inter_channels),
                                    nn.ReLU(),
                                    )
-        self.dconv4_1 = nn.Sequential(nn.Conv2d(inter_channels, inter_channels, 1, padding=0, dilation=1, bias=False),
-                                   norm_layer(inter_channels),
-                                   nn.ReLU(),
-                                   )
-        self.dconv4_8 = nn.Sequential(nn.Conv2d(inter_channels, inter_channels, 3, padding=8, dilation=8, bias=False),
+
+        self.dconv4_8 = nn.Sequential(nn.Conv2d(in_channels, inter_channels, 3, padding=8, dilation=8, bias=False),
                                    norm_layer(inter_channels),
                                    nn.ReLU(),
                                    )
@@ -106,20 +95,17 @@ class dfpn6_gsfHead(nn.Module):
         # out = self.localUp2(c1, out)
         
 
-        p4_1 = self.dconv4_1(out4)
-        p4_8 = self.dconv4_8(out4)
-        p4_1 = F.interpolate(p4_1, (h,w), **self._up_kwargs)
+        p4_8 = self.dconv4_8(c4)
+        p4_1 = F.interpolate(out4, (h,w), **self._up_kwargs)
         p4_8 = F.interpolate(p4_8, (h,w), **self._up_kwargs)
 
-        p3 = self.fuse3(out3)
-        p3_1 = self.dconv3_1(p3)
-        p3_8 = self.dconv3_8(p3)
+        p3_1 = self.dconv3_1(out3)
+        p3_8 = self.dconv3_8(out3)
         p3_1 = F.interpolate(p3_1, (h,w), **self._up_kwargs)
         p3_8 = F.interpolate(p3_8, (h,w), **self._up_kwargs)
 
-        p2 = self.fuse2(out2)
-        p2_1 = self.dconv2_1(p2)
-        p2_8 = self.dconv2_8(p2)
+        p2_1 = self.dconv2_1(out2)
+        p2_8 = self.dconv2_8(out2)
 
         out = self.project(torch.cat([p2_1,p2_8,p3_1,p3_8,p4_1,p4_8], dim=1))
         #gp
