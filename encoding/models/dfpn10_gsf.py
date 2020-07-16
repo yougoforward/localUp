@@ -44,11 +44,11 @@ class dfpn10_gsfHead(nn.Module):
                                    norm_layer(inter_channels),
                                    nn.ReLU(),
                                    )
-        self.conv52 = nn.Sequential(nn.Conv2d(1024, inter_channels, 3, padding=1, bias=False),
+        self.conv52 = nn.Sequential(nn.Conv2d(1024, inter_channels, 1, padding=0, bias=False),
                                    norm_layer(inter_channels),
                                    nn.ReLU(),
                                    )
-        self.conv53 = nn.Sequential(nn.Conv2d(512, inter_channels, 3, padding=1, bias=False),
+        self.conv53 = nn.Sequential(nn.Conv2d(512, inter_channels, 1, padding=0, bias=False),
                                    norm_layer(inter_channels),
                                    nn.ReLU(),
                                    )
