@@ -40,7 +40,7 @@ class dfpn8_gsfHead(nn.Module):
         self._up_kwargs = up_kwargs
 
         inter_channels = in_channels // 4
-        self.conv5 = nn.Sequential(nn.Conv2d(in_channels, inter_channels, 1, padding=0, bias=False),
+        self.conv5 = nn.Sequential(nn.Conv2d(in_channels, inter_channels, 3, padding=1, bias=False),
                                    norm_layer(inter_channels),
                                    nn.ReLU(),
                                    )
@@ -127,7 +127,9 @@ class dfpn8_gsfHead(nn.Module):
 class localUp(nn.Module):
     def __init__(self, in_channels, out_channels, norm_layer, up_kwargs):
         super(localUp, self).__init__()
-        self.connect = nn.Sequential(
+        self.connect = nn.Sequential(nn.Conv2d(in_channels, in_channels, 3, padding=1, dilation=1, bias=False),
+                                   norm_layer(in_channels),
+                                   nn.ReLU(),
                                    nn.Conv2d(in_channels, out_channels, 1, padding=0, dilation=1, bias=False),
                                    norm_layer(out_channels),
                                    nn.ReLU())

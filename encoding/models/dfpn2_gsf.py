@@ -76,14 +76,6 @@ class dfpn2_gsfHead(nn.Module):
                                    norm_layer(inter_channels),
                                    nn.ReLU(),
                                    )
-        self.fuse2 = nn.Sequential(nn.Conv2d(inter_channels, inter_channels, 3, padding=1, dilation=1, bias=False),
-                                   norm_layer(inter_channels),
-                                   nn.ReLU(),
-                                   )
-        self.fuse3 = nn.Sequential(nn.Conv2d(inter_channels, inter_channels, 3, padding=1, dilation=1, bias=False),
-                                   norm_layer(inter_channels),
-                                   nn.ReLU(),
-                                   )
         self.project = nn.Sequential(nn.Conv2d(4*inter_channels, inter_channels, 1, padding=0, dilation=1, bias=False),
                                    norm_layer(inter_channels),
                                    nn.ReLU(),
@@ -98,9 +90,8 @@ class dfpn2_gsfHead(nn.Module):
 
         p4 = self.dconv4(out4)
         p4 = F.interpolate(p4, (h,w), **self._up_kwargs)
-        p3 = self.dconv3(self.fuse3(out3))
+        p3 = self.dconv3(out3)
         p3 = F.interpolate(p3, (h,w), **self._up_kwargs)
-        out2 = self.fuse2(out2)
         p2 = self.dconv2(out2)
         p1 = self.dconv1(out2)
 
@@ -121,7 +112,9 @@ class dfpn2_gsfHead(nn.Module):
 class localUp(nn.Module):
     def __init__(self, in_channels, out_channels, norm_layer, up_kwargs):
         super(localUp, self).__init__()
-        self.connect = nn.Sequential(
+        self.connect = nn.Sequential(nn.Conv2d(in_channels, in_channels, 3, padding=1, dilation=1, bias=False),
+                                   norm_layer(in_channels),
+                                   nn.ReLU(),
                                    nn.Conv2d(in_channels, out_channels, 1, padding=0, dilation=1, bias=False),
                                    norm_layer(out_channels),
                                    nn.ReLU())
