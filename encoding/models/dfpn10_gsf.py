@@ -44,11 +44,11 @@ class dfpn10_gsfHead(nn.Module):
                                    norm_layer(inter_channels),
                                    nn.ReLU(),
                                    )
-        self.conv52 = nn.Sequential(nn.Conv2d(1024, inter_channels, 1, padding=0, bias=False),
+        self.conv52 = nn.Sequential(nn.Conv2d(1024, inter_channels, 3, padding=1, bias=False),
                                    norm_layer(inter_channels),
                                    nn.ReLU(),
                                    )
-        self.conv53 = nn.Sequential(nn.Conv2d(512, inter_channels, 1, padding=0, bias=False),
+        self.conv53 = nn.Sequential(nn.Conv2d(512, inter_channels, 3, padding=1, bias=False),
                                    norm_layer(inter_channels),
                                    nn.ReLU(),
                                    )
@@ -64,9 +64,9 @@ class dfpn10_gsfHead(nn.Module):
 
         self.conv6 = nn.Sequential(nn.Dropout2d(0.1), nn.Conv2d(2*inter_channels, out_channels, 1))
 
-        self.localUp2=localUp(inter_channels+inter_channels//2, inter_channels, norm_layer, up_kwargs)
-        self.localUp3=localUp(inter_channels*2, inter_channels//2, norm_layer, up_kwargs)
-        self.localUp4=localUp(inter_channels*2, inter_channels, norm_layer, up_kwargs)
+        self.localUp2=localUp(inter_channels, inter_channels, norm_layer, up_kwargs)
+        self.localUp3=localUp(inter_channels, inter_channels, norm_layer, up_kwargs)
+        self.localUp4=localUp(inter_channels, inter_channels, norm_layer, up_kwargs)
 
 
         self.dconv1 = nn.Sequential(nn.Conv2d(inter_channels, inter_channels, 3, padding=1, dilation=1, bias=False),
@@ -136,7 +136,7 @@ class localUp(nn.Module):
     def forward(self, high,low):
         n,c,h,w =high.size()
         low = F.interpolate(low, (h,w), **self._up_kwargs)
-        out = self.connect(torch.cat([high, low], dim=1))
+        out = self.connect(high+low)
         return out
 
 
