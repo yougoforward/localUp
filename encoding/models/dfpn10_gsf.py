@@ -44,11 +44,11 @@ class dfpn10_gsfHead(nn.Module):
                                    norm_layer(inter_channels),
                                    nn.ReLU(),
                                    )
-        self.conv52 = nn.Sequential(nn.Conv2d(1024, inter_channels, 3, padding=1, bias=False),
+        self.conv52 = nn.Sequential(nn.Conv2d(1024, inter_channels, 1, padding=0, bias=False),
                                    norm_layer(inter_channels),
                                    nn.ReLU(),
                                    )
-        self.conv53 = nn.Sequential(nn.Conv2d(512, inter_channels, 3, padding=1, bias=False),
+        self.conv53 = nn.Sequential(nn.Conv2d(512, inter_channels, 1, padding=0, bias=False),
                                    norm_layer(inter_channels),
                                    nn.ReLU(),
                                    )
@@ -125,9 +125,6 @@ class localUp(nn.Module):
     def __init__(self, in_channels, out_channels, norm_layer, up_kwargs):
         super(localUp, self).__init__()
         self.connect = nn.Sequential(nn.Conv2d(in_channels, out_channels, 3, padding=1, dilation=1, bias=False),
-                                   norm_layer(out_channels),
-                                   nn.ReLU(),
-                                   nn.Conv2d(out_channels, out_channels, 3, padding=1, dilation=1, bias=False),
                                    norm_layer(out_channels),
                                    nn.ReLU())
 
