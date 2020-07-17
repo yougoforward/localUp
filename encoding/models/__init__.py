@@ -66,7 +66,7 @@ from .dfpn7_gsf import *
 from .dfpn8_gsf import *
 from .dfpn9_gsf import *
 from .dfpn10_gsf import *
-from .dfpn71_gsf import *
+from .dfpn71_gsf import*
 from .dfpn72_gsf import *
 
 from .blur_detect import *
