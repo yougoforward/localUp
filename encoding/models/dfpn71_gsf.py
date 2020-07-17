@@ -110,15 +110,15 @@ class ASPP(nn.Module):
                                    norm_layer(inter_channels),
                                    nn.ReLU(),
                                    )
-        self.dconv1 = nn.Sequential(nn.Conv2d(in_channels, inter_channels, 3, padding=dilation_rate, dilation=8, bias=False),
+        self.dconv1 = nn.Sequential(nn.Conv2d(in_channels, inter_channels, 3, padding=dilation_rate, dilation=dilation_rate, bias=False),
                                    norm_layer(inter_channels),
                                    nn.ReLU(),
                                    )
-        self.dconv2 = nn.Sequential(nn.Conv2d(in_channels, inter_channels, 3, padding=2*dilation_rate, dilation=1, bias=False),
+        self.dconv2 = nn.Sequential(nn.Conv2d(in_channels, inter_channels, 3, padding=2*dilation_rate, dilation=2*dilation_rate, bias=False),
                                    norm_layer(inter_channels),
                                    nn.ReLU(),
                                    )
-        self.dconv3 = nn.Sequential(nn.Conv2d(in_channels, inter_channels, 3, padding=4*dilation_rate, dilation=8, bias=False),
+        self.dconv3 = nn.Sequential(nn.Conv2d(in_channels, inter_channels, 3, padding=4*dilation_rate, dilation=4*dilation_rate, bias=False),
                                    norm_layer(inter_channels),
                                    nn.ReLU(),
                                    )
