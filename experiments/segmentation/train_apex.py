@@ -78,9 +78,9 @@ class Trainer():
         
         # using cuda
         if args.cuda:
+            self.model, self.optimizer = amp.initialize(self.model.cuda(), self.optimizer, opt_level="O1")
             self.model = DataParallelModel(self.model).cuda()
             self.criterion = DataParallelCriterion(self.criterion).cuda()
-            self.model, self.optimizer = amp.initialize(self.model, self.optimizer, opt_level="O1")
 
         # resuming checkpoint
         self.best_pred = 0.0
