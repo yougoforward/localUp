@@ -73,7 +73,6 @@ class Trainer():
                                             se_weight=args.se_weight,
                                             aux_weight=args.aux_weight)
         ######### apex ##################
-        model, optimizer = amp.initialize(model, optimizer, opt_level="O1")
         self.model, self.optimizer = model, optimizer
 
         
@@ -81,6 +80,8 @@ class Trainer():
         if args.cuda:
             self.model = DataParallelModel(self.model).cuda()
             self.criterion = DataParallelCriterion(self.criterion).cuda()
+            self.model, self.optimizer = amp.initialize(self.model, self.optimizer, opt_level="O1")
+
         # resuming checkpoint
         self.best_pred = 0.0
         if args.resume is not None:
