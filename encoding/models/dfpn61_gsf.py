@@ -7,14 +7,14 @@ import torch.nn.functional as F
 from .fcn import FCNHead
 from .base import BaseNet
 
-__all__ = ['dfpn61_gsf', 'get_dfpn61_gsf']
+__all__ = ['dfpn6_gsf', 'get_dfpn6_gsf']
 
 
-class dfpn61_gsf(BaseNet):
+class dfpn6_gsf(BaseNet):
     def __init__(self, nclass, backbone, aux=True, se_loss=False, norm_layer=nn.BatchNorm2d, **kwargs):
-        super(dfpn61_gsf, self).__init__(nclass, backbone, aux, se_loss, norm_layer=norm_layer, **kwargs)
+        super(dfpn6_gsf, self).__init__(nclass, backbone, aux, se_loss, norm_layer=norm_layer, **kwargs)
 
-        self.head = dfpn61_gsfHead(2048, nclass, norm_layer, se_loss, jpu=kwargs['jpu'], up_kwargs=self._up_kwargs)
+        self.head = dfpn6_gsfHead(2048, nclass, norm_layer, se_loss, jpu=kwargs['jpu'], up_kwargs=self._up_kwargs)
         if aux:
             self.auxlayer = FCNHead(1024, nclass, norm_layer)
 
@@ -32,10 +32,10 @@ class dfpn61_gsf(BaseNet):
 
 
 
-class dfpn61_gsfHead(nn.Module):
+class dfpn6_gsfHead(nn.Module):
     def __init__(self, in_channels, out_channels, norm_layer, se_loss, jpu=False, up_kwargs=None,
                  atrous_rates=(12, 24, 36)):
-        super(dfpn61_gsfHead, self).__init__()
+        super(dfpn6_gsfHead, self).__init__()
         self.se_loss = se_loss
         self._up_kwargs = up_kwargs
 
@@ -64,19 +64,19 @@ class dfpn61_gsfHead(nn.Module):
                                    norm_layer(inter_channels),
                                    nn.ReLU(),
                                    )
-        self.dconv3_1 = nn.Sequential(nn.Conv2d(inter_channels, inter_channels, 1, padding=0, dilation=1, bias=False),
+        self.dconv2_8 = nn.Sequential(nn.Conv2d(inter_channels, inter_channels, 3, padding=8, dilation=8, bias=False),
                                    norm_layer(inter_channels),
                                    nn.ReLU(),
                                    )
-        self.dconv3_4 = nn.Sequential(nn.Conv2d(inter_channels, inter_channels, 3, padding=4, dilation=4, bias=False),
+        self.dconv2_2 = nn.Sequential(nn.Conv2d(inter_channels, inter_channels, 3, padding=2, dilation=2, bias=False),
                                    norm_layer(inter_channels),
                                    nn.ReLU(),
                                    )
-        self.dconv4_1 = nn.Sequential(nn.Conv2d(inter_channels, inter_channels, 1, padding=0, dilation=1, bias=False),
+        self.dconv3_8 = nn.Sequential(nn.Conv2d(inter_channels, inter_channels, 3, padding=8, dilation=8, bias=False),
                                    norm_layer(inter_channels),
                                    nn.ReLU(),
                                    )
-        self.dconv4_4 = nn.Sequential(nn.Conv2d(inter_channels, inter_channels, 3, padding=4, dilation=4, bias=False),
+        self.dconv2_4 = nn.Sequential(nn.Conv2d(inter_channels, inter_channels, 3, padding=4, dilation=4, bias=False),
                                    norm_layer(inter_channels),
                                    nn.ReLU(),
                                    )
@@ -96,21 +96,22 @@ class dfpn61_gsfHead(nn.Module):
         # out = self.localUp2(c1, out)
         
 
-        p4_1 = self.dconv4_1(out4)
-        p4_4 = self.dconv4_4(out4)
+        # p4_1 = self.dconv4_1(out4)
         p4_8 = self.dconv4_8(out4)
-        p4_1 = F.interpolate(p4_1, (h,w), **self._up_kwargs)
-        p4_4 = F.interpolate(p4_4, (h,w), **self._up_kwargs)
+        # p4_1 = F.interpolate(p4_1, (h,w), **self._up_kwargs)
         p4_8 = F.interpolate(p4_8, (h,w), **self._up_kwargs)
 
-        p3_1 = self.dconv3_1(out3)
-        p3_4 = self.dconv3_4(out3)
-        p3_1 = F.interpolate(p3_1, (h,w), **self._up_kwargs)
-        p3_4 = F.interpolate(p3_4, (h,w), **self._up_kwargs)
+        # p3_1 = self.dconv3_1(out3)
+        p3_8 = self.dconv3_8(out3)
+        # p3_1 = F.interpolate(p3_1, (h,w), **self._up_kwargs)
+        p3_8 = F.interpolate(p3_8, (h,w), **self._up_kwargs)
 
         p2_1 = self.dconv2_1(out2)
+        p2_2 = self.dconv2_2(out2)
+        p2_4 = self.dconv2_4(out2)
+        p2_8 = self.dconv2_8(out2)
 
-        out = self.project(torch.cat([p2_1,p3_1,p3_4,p4_1,p4_4,p4_8], dim=1))
+        out = self.project(torch.cat([p2_1,p2_2,p2_4,p2_8,p3_8,p4_8], dim=1))
         #gp
         gp = self.gap(c4)        
         # se
@@ -127,9 +128,7 @@ class dfpn61_gsfHead(nn.Module):
 class localUp(nn.Module):
     def __init__(self, in_channels, out_channels, norm_layer, up_kwargs):
         super(localUp, self).__init__()
-        self.connect = nn.Sequential(nn.Conv2d(in_channels, in_channels, 3, padding=1, dilation=1, bias=False),
-                                   norm_layer(in_channels),
-                                   nn.ReLU(),
+        self.connect = nn.Sequential(
                                    nn.Conv2d(in_channels, out_channels, 1, padding=0, dilation=1, bias=False),
                                    norm_layer(out_channels),
                                    nn.ReLU())
@@ -151,11 +150,11 @@ class localUp(nn.Module):
         return out
 
 
-def get_dfpn61_gsf(dataset='pascal_voc', backbone='resnet50', pretrained=False,
+def get_dfpn6_gsf(dataset='pascal_voc', backbone='resnet50', pretrained=False,
                  root='~/.encoding/models', **kwargs):
     # infer number of classes
     from ..datasets import datasets
-    model = dfpn61_gsf(datasets[dataset.lower()].NUM_CLASS, backbone=backbone, root=root, **kwargs)
+    model = dfpn6_gsf(datasets[dataset.lower()].NUM_CLASS, backbone=backbone, root=root, **kwargs)
     if pretrained:
         raise NotImplementedError
 
