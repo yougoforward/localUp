@@ -52,6 +52,8 @@ class Blur2Segmentation(BaseDataset):
         if self.mode != 'test':
             assert (len(self.images) == len(self.masks))
 
+        self.colorjitter = transforms.ColorJitter(brightness=0.1, contrast=0.5, saturation=0.5, hue=0.1)
+
     def __getitem__(self, index):
         img = Image.open(self.images[index]).convert('RGB')
         if self.mode == 'test':
@@ -91,8 +93,7 @@ class Blur2Segmentation(BaseDataset):
         img = img.resize((ow, oh), Image.BILINEAR)
         mask = mask.resize((ow, oh), Image.NEAREST)
 
-        colorjitter = transforms.ColorJitter(brightness=0.1, contrast=0.5, saturation=0.5, hue=0.1)
-        img = colorjitter(img)
+        img = self.colorjitter(img)
 
         # random rotate
         # img, mask = RandomRotation(img, mask, 45, is_continuous=False)
@@ -117,12 +118,6 @@ class Blur2Segmentation(BaseDataset):
         #     img = img.filter(ImageFilter.GaussianBlur(
         #         radius=random.random()))
 
-        #random hsv
-        # img = RandomHSV(img, 10, 10, 10)
-        # #random contrast
-        # img=RandomContrast(img)
-        # #random perm
-        # img = RandomPerm(img)
         # final transform
         return img, self._mask_transform(mask)
     def _mask_transform(self, mask):
