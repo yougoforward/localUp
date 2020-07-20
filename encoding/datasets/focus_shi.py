@@ -106,7 +106,7 @@ class Blur2Segmentation(BaseDataset):
             padh = crop_size - oh if oh < crop_size else 0
             padw = crop_size - ow if ow < crop_size else 0
             img = ImageOps.expand(img, border=(0, 0, padw, padh), fill=0)
-            mask = ImageOps.expand(mask, border=(0, 0, padw, padh), fill=0)
+            mask = ImageOps.expand(mask, border=(0, 0, padw, padh), fill=255)
         # random crop crop_size
         w, h = img.size
         x1 = random.randint(0, w - crop_size)
