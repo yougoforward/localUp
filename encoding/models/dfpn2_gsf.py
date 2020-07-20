@@ -59,17 +59,6 @@ class dfpn2_gsfHead(nn.Module):
         self.localUp3=localUp(512, inter_channels, norm_layer, up_kwargs)
         self.localUp4=localUp(1024, inter_channels, norm_layer, up_kwargs)
 
-
-        self.dconv2_1 = nn.Sequential(nn.Conv2d(inter_channels, inter_channels, 3, padding=1, dilation=1, bias=False),
-                                   norm_layer(inter_channels),
-                                   nn.ReLU(),
-                                   )
-
-        self.dconv3_1 = nn.Sequential(nn.Conv2d(inter_channels, inter_channels, 3, padding=1, dilation=1, bias=False),
-                                   norm_layer(inter_channels),
-                                   nn.ReLU(),
-                                   )
-
         self.dconv4_1 = nn.Sequential(nn.Conv2d(in_channels, inter_channels, 1, padding=0, dilation=1, bias=False),
                                    norm_layer(inter_channels),
                                    nn.ReLU(),
@@ -107,8 +96,8 @@ class dfpn2_gsfHead(nn.Module):
     def forward(self, c1,c2,c3,c4,c20,c30,c40):
         _,_, h,w = c2.size()
         p4_1 = self.dconv4_1(c4)
-        out3 = self.localUp4(c3, p4_1)
-        out2 = self.localUp3(c2, out3)
+        p3_1 = self.localUp4(c3, p4_1)
+        p2_1 = self.localUp3(c2, p3_1)
         # out = self.localUp2(c1, out)
         
         p4_2 = self.dconv4_2(c4)
@@ -118,12 +107,7 @@ class dfpn2_gsfHead(nn.Module):
         p4_2 = F.interpolate(p4_2, (h,w), **self._up_kwargs)
         p4_4 = F.interpolate(p4_4, (h,w), **self._up_kwargs)
         p4_8 = F.interpolate(p4_8, (h,w), **self._up_kwargs)
-
-        p3_1 = self.dconv3_1(out3)
         p3_1 = F.interpolate(p3_1, (h,w), **self._up_kwargs)
-
-        p2_1 = self.dconv2_1(out2)
-
         out = self.project(torch.cat([p2_1,p3_1,p4_1,p4_2,p4_4,p4_8], dim=1))
         #gp
         gp = self.gap(c4)        
@@ -147,8 +131,10 @@ class localUp(nn.Module):
                                    nn.ReLU())
 
         self._up_kwargs = up_kwargs
-
-
+        self.refine = nn.Sequential(
+                                   nn.Conv2d(out_channels, out_channels, 3, padding=1, dilation=1, bias=False),
+                                   norm_layer(out_channels),
+                                   nn.ReLU())
 
     def forward(self, c1,c2):
         n,c,h,w =c1.size()

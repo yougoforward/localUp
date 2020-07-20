@@ -129,8 +129,6 @@ class localUp(nn.Module):
                                    norm_layer(out_channels),
                                    nn.ReLU())
 
-
-
     def forward(self, c1,c2):
         n,c,h,w =c1.size()
         c1 = self.connect(c1) # n, 64, h, w
