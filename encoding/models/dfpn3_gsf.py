@@ -115,7 +115,7 @@ class localUp(nn.Module):
         inter_channels = 256
         self.connect = nn.Sequential(
                                    nn.Conv2d(in_channels, inter_channels, 1, padding=0, dilation=1, bias=False),
-                                   norm_layer(out_channels),
+                                   norm_layer(inter_channels),
                                    nn.ReLU())
 
         self._up_kwargs = up_kwargs
