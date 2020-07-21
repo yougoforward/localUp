@@ -128,7 +128,9 @@ class localUp(nn.Module):
         c1 = self.connect(c1) # n, 64, h, w
         c2 = F.interpolate(c2, (h,w), **self._up_kwargs)
         out = c1+c2
+        out = self.refine(out)
         return out
+
 
 
 def get_dfpn3_gsf(dataset='pascal_voc', backbone='resnet50', pretrained=False,
