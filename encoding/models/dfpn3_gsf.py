@@ -121,6 +121,9 @@ class localUp(nn.Module):
         self.refine = nn.Sequential(
                                    nn.Conv2d(out_channels, out_channels, 3, padding=1, dilation=1, bias=False),
                                    norm_layer(out_channels),
+                                   nn.ReLU(),
+                                   nn.Conv2d(out_channels, out_channels, 3, padding=1, dilation=1, bias=False),
+                                   norm_layer(out_channels),
                                    nn.ReLU())
 
     def forward(self, c1,c2):
