@@ -84,7 +84,7 @@ class dfpn5_gsfHead(nn.Module):
         _,_, h,w = c2.size()
         out4 = self.conv5(c4)
         out3, refine_out3 = self.localUp4(c3, out4)
-        out2, refine_out3 = self.localUp3(c2, out3)
+        _, refine_out2 = self.localUp3(c2, out3)
         # out = self.localUp2(c1, out)
         
 
