@@ -143,6 +143,7 @@ class localUp(nn.Module):
         self.refine = nn.Sequential(nn.Conv2d(in_channels1, self.key_dim, 1, padding=0, dilation=1, bias=False))
         self.refine2 = nn.Sequential(nn.Conv2d(in_channels2, self.key_dim, 1, padding=0, dilation=1, bias=False)) 
         self._up_kwargs = up_kwargs
+        self.unfold = nn.unfold(3, 2, 2, 1)
 
 
 
@@ -152,12 +153,12 @@ class localUp(nn.Module):
         c2 = F.interpolate(c2, (h,w), **self._up_kwargs)
         c2 = F.normalizae(self.refine2(c2))
 
-        unfold_up_c2 = F.unfold(c2, 3, 2, 2, 1).permute(0,2,1).view(n, h*w, -1, 3*3)
+        unfold_up_c2 = self.unfold(c2).permute(0,2,1).view(n, h*w, -1, 3*3)
         # torch.nn.functional.unfold(input, kernel_size, dilation=1, padding=0, stride=1)
         energy = torch.matmul(c1.view(n, -1, h*w).permute(0,2,1).unsqueeze(2), unfold_up_c2).squeeze(2) #n,h*w,3x3
         att = torch.softmax(energy, dim=-1)
         out = F.interpolate(out, (h,w), **self._up_kwargs)
-        unfold_out = F.unfold(out, 3, 2, 2, 1).permute(0,2,1).view(n, h*w, -1, 3*3)
+        unfold_out = self.unfold(out).permute(0,2,1).view(n, h*w, -1, 3*3)
         out = torch.matmul(unfold_out, att.unsqueeze(3)).squeeze(3).permute(0,2,1).view(n,-1,h,w)
         return out
 
