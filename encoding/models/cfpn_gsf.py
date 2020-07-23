@@ -284,7 +284,7 @@ class GFF2_Module(nn.Module):
 
         gamma = self.gamma(xl)
         out = F.interpolate(out, (hu,wu), mode='bilinear', align_corners=True)
-        x = F.interpolate(x, (hu,wu), mode='nearest', align_corners=True)
+        x = F.interpolate(x, (hu,wu), mode='nearest')
         out = (1-gamma)*out + gamma*x
         # out = self.fuse_conv(out)
         return out
