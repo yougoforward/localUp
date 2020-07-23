@@ -143,7 +143,7 @@ class localUp(nn.Module):
         self.refine = nn.Sequential(nn.Conv2d(in_channels1, self.key_dim, 1, padding=0, dilation=1, bias=False))
         self.refine2 = nn.Sequential(nn.Conv2d(in_channels2, self.key_dim, 1, padding=0, dilation=1, bias=False)) 
         self._up_kwargs = up_kwargs
-        self.unfold = nn.unfold(3, 2, 2, 1)
+        self.unfold = nn.Unfold(3, 2, 2, 1)
 
 
 
