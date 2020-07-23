@@ -151,7 +151,7 @@ class localUp(nn.Module):
         n,c,h,w =c1.size()
         c1 = F.normalize(self.refine(c1)) # n, 64, h, w
         c2 = F.interpolate(c2, (h,w), **self._up_kwargs)
-        c2 = F.normalizae(self.refine2(c2))
+        c2 = F.normalize(self.refine2(c2))
 
         unfold_up_c2 = self.unfold(c2).permute(0,2,1).view(n, h*w, -1, 3*3)
         # torch.nn.functional.unfold(input, kernel_size, dilation=1, padding=0, stride=1)
