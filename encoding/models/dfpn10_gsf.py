@@ -140,19 +140,17 @@ class localUp(nn.Module):
         #                            nn.Conv2d(64, 64, 3, padding=2, dilation=2, bias=False),
         #                            norm_layer(64),
         #                            nn.ReLU())
-        self.refine = nn.Sequential(nn.Conv2d(in_channels1, self.key_dim, 1, padding=0, dilation=1, bias=False),
-                                   norm_layer(in_channels1//8))
-        self.refine2 = nn.Sequential(nn.Conv2d(in_channels2, self.key_dim, 1, padding=0, dilation=1, bias=False),
-                                   norm_layer(in_channels1//8)) 
+        self.refine = nn.Sequential(nn.Conv2d(in_channels1, self.key_dim, 1, padding=0, dilation=1, bias=False))
+        self.refine2 = nn.Sequential(nn.Conv2d(in_channels2, self.key_dim, 1, padding=0, dilation=1, bias=False)) 
         self._up_kwargs = up_kwargs
 
 
 
     def forward(self, c1,c2,out):
         n,c,h,w =c1.size()
-        c1 = self.refine(c1) # n, 64, h, w
+        c1 = F.normalize(self.refine(c1)) # n, 64, h, w
         c2 = F.interpolate(c2, (h,w), **self._up_kwargs)
-        c2 = self.refine2(c2)
+        c2 = F.normalizae(self.refine2(c2))
 
         unfold_up_c2 = F.unfold(c2, 3, 2, 2, 1).permute(0,2,1).view(n, h*w, -1, 3*3)
         # torch.nn.functional.unfold(input, kernel_size, dilation=1, padding=0, stride=1)
