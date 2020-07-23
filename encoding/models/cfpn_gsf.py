@@ -268,7 +268,8 @@ class GFF2_Module(nn.Module):
         _,_,hu,wu = xl.size()
 
     
-        xp = self.pool(x)
+        # xp = self.pool(x)
+        xp = x
         m_batchsize, C, height, width = x.size()
         m_batchsize, C, hp, wp = xp.size()
         proj_query = self.query_conv(x).view(m_batchsize, -1, width*height).permute(0, 2, 1)
