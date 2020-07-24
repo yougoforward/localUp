@@ -235,6 +235,62 @@ class GFF_Module(nn.Module):
         return out
 
 
+# class GFF2_Module(nn.Module):
+#     """ Position attention module"""
+#     # guided feature filtering
+#     def __init__(self, in_dim1, in_dim2, key_dim, value_dim, out_dim, norm_layer):
+#         super(GFF2_Module, self).__init__()
+#         self.pool = nn.MaxPool2d(kernel_size=2)
+#         # self.pool = nn.AvgPool2d(kernel_size=2)
+
+#         self.query_conv = nn.Conv2d(in_channels=in_dim1, out_channels=key_dim, kernel_size=1)
+#         self.key_conv = nn.Conv2d(in_channels=in_dim1, out_channels=key_dim, kernel_size=1)
+#         # self.value_conv = nn.Conv2d(in_channels=value_dim, out_channels=value_dim, kernel_size=1)
+#         # self.gamma = nn.Parameter(torch.zeros(1))
+#         self.gamma = nn.Sequential(nn.Conv2d(in_dim2, in_dim2//4, 3, padding=1, dilation=1, bias=False),
+#                                    norm_layer(in_dim2//4),
+#                                    nn.ReLU(),
+#                                    nn.Conv2d(in_channels=in_dim2//4, out_channels=1, kernel_size=1, bias=True), nn.Sigmoid())
+#         # self.gamma = nn.Sequential(nn.Conv2d(in_channels=in_dim2, out_channels=1, kernel_size=1, bias=True), nn.Sigmoid())
+#         self.softmax = nn.Softmax(dim=-1)
+#         # self.fuse_conv = nn.Sequential(nn.Conv2d(value_dim, out_dim, 1, bias=False),
+#         #                                norm_layer(out_dim),
+#         #                                nn.ReLU(True))
+
+#     def forward(self, x, xl):
+#         """
+#             inputs :
+#                 x : input feature maps( B X C X H X W)
+#             returns :
+#                 out : attention value + input feature
+#                 attention: B X (HxW) X (HxW)
+#         """
+#         _,_,hu,wu = xl.size()
+
+    
+#         # xp = self.pool(x)
+#         xp = x
+#         m_batchsize, C, height, width = x.size()
+#         m_batchsize, C, hp, wp = xp.size()
+#         proj_query = self.query_conv(x).view(m_batchsize, -1, width*height).permute(0, 2, 1)
+#         proj_key = self.key_conv(xp).view(m_batchsize, -1, wp*hp)
+#         energy = torch.bmm(proj_query, proj_key)
+#         attention = self.softmax(energy)
+#         # proj_value = self.value_conv(x).view(m_batchsize, -1, width*height)
+#         proj_value = xp.view(m_batchsize, -1, wp*hp)
+        
+#         out = torch.bmm(proj_value, attention.permute(0, 2, 1))
+#         out = out.view(m_batchsize, C, height, width)
+#         # out = F.interpolate(out, (height, width), mode="bilinear", align_corners=True)
+
+#         gamma = self.gamma(xl)
+#         out = F.interpolate(out, (hu,wu), mode='bilinear', align_corners=True)
+#         x = F.interpolate(x, (hu,wu), mode='nearest')
+#         out = (1-gamma)*out + gamma*x
+#         # out = self.fuse_conv(out)
+#         return out
+
+
 class GFF2_Module(nn.Module):
     """ Position attention module"""
     # guided feature filtering
@@ -267,24 +323,11 @@ class GFF2_Module(nn.Module):
         """
         _,_,hu,wu = xl.size()
 
-    
-        # xp = self.pool(x)
-        xp = x
-        m_batchsize, C, height, width = x.size()
-        m_batchsize, C, hp, wp = xp.size()
-        proj_query = self.query_conv(x).view(m_batchsize, -1, width*height).permute(0, 2, 1)
-        proj_key = self.key_conv(xp).view(m_batchsize, -1, wp*hp)
-        energy = torch.bmm(proj_query, proj_key)
-        attention = self.softmax(energy)
-        # proj_value = self.value_conv(x).view(m_batchsize, -1, width*height)
-        proj_value = xp.view(m_batchsize, -1, wp*hp)
-        
-        out = torch.bmm(proj_value, attention.permute(0, 2, 1))
-        out = out.view(m_batchsize, C, height, width)
+
         # out = F.interpolate(out, (height, width), mode="bilinear", align_corners=True)
 
         gamma = self.gamma(xl)
-        out = F.interpolate(out, (hu,wu), mode='bilinear', align_corners=True)
+        out = F.interpolate(x, (hu,wu), mode='bilinear', align_corners=True)
         x = F.interpolate(x, (hu,wu), mode='nearest')
         out = (1-gamma)*out + gamma*x
         # out = self.fuse_conv(out)
