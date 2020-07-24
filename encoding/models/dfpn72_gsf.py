@@ -134,13 +134,18 @@ class dfpn72_gsfHead(nn.Module):
 class localUp(nn.Module):
     def __init__(self, in_channels, out_channels, norm_layer, up_kwargs):
         super(localUp, self).__init__()
-        self.connect = nn.Sequential(nn.Conv2d(in_channels, in_channels, 3, padding=1, dilation=1, bias=False),
-                                   norm_layer(in_channels),
+        # self.connect = nn.Sequential(nn.Conv2d(in_channels, in_channels, 3, padding=1, dilation=1, bias=False),
+        #                            norm_layer(in_channels),
+        #                            nn.ReLU(),
+        #                            nn.Conv2d(in_channels, out_channels, 1, padding=0, dilation=1, bias=False),
+        #                            norm_layer(out_channels),
+        #                            nn.ReLU())
+        self.connect = nn.Sequential(nn.Conv2d(in_channels, out_channels, 1, padding=0, dilation=1, bias=False),
+                                   norm_layer(out_channels),
                                    nn.ReLU(),
-                                   nn.Conv2d(in_channels, out_channels, 1, padding=0, dilation=1, bias=False),
+                                   nn.Conv2d(out_channels, out_channels, 3, padding=1, dilation=1, bias=False),
                                    norm_layer(out_channels),
                                    nn.ReLU())
-
         self._up_kwargs = up_kwargs
 
     def forward(self, c1,c2):
