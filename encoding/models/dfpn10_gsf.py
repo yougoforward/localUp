@@ -159,7 +159,7 @@ class localUp(nn.Module):
         att = torch.softmax(energy, dim=1)
         out = F.interpolate(out, (h,w), **self._up_kwargs)
         unfold_out = self.unfold(out).view(n, -1, 3*3, h, w)
-        out = torch.einsum('nkhw, nckhw -> nchw', c1, unfold_out)
+        out = torch.einsum('nkhw, nckhw -> nchw', att, unfold_out)
         return out
 
 def get_dfpn10_gsf(dataset='pascal_voc', backbone='resnet50', pretrained=False,
