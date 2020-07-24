@@ -303,10 +303,10 @@ class GFF2_Module(nn.Module):
         self.key_conv = nn.Conv2d(in_channels=in_dim1, out_channels=key_dim, kernel_size=1)
         # self.value_conv = nn.Conv2d(in_channels=value_dim, out_channels=value_dim, kernel_size=1)
         # self.gamma = nn.Parameter(torch.zeros(1))
-        self.gamma = nn.Sequential(nn.Conv2d(in_dim2, in_dim2//4, 3, padding=1, dilation=1, bias=False),
-                                   norm_layer(in_dim2//4),
+        self.gamma = nn.Sequential(nn.Conv2d(in_dim2+in_dim1, out_dim, 1, padding=0, dilation=1, bias=False),
+                                   norm_layer(out_dim),
                                    nn.ReLU(),
-                                   nn.Conv2d(in_channels=in_dim2//4, out_channels=1, kernel_size=1, bias=True), nn.Sigmoid())
+                                   nn.Conv2d(in_channels=out_dim, out_channels=1, kernel_size=1, bias=True), nn.Sigmoid())
         # self.gamma = nn.Sequential(nn.Conv2d(in_channels=in_dim2, out_channels=1, kernel_size=1, bias=True), nn.Sigmoid())
         self.softmax = nn.Softmax(dim=-1)
         # self.fuse_conv = nn.Sequential(nn.Conv2d(value_dim, out_dim, 1, bias=False),
@@ -326,8 +326,9 @@ class GFF2_Module(nn.Module):
 
         # out = F.interpolate(out, (height, width), mode="bilinear", align_corners=True)
 
-        gamma = self.gamma(xl)
         out = F.interpolate(x, (hu,wu), mode='bilinear', align_corners=True)
+        gamma = self.gamma(torch.cat([xl, out], dim=1))
+
         x = F.interpolate(x, (hu,wu), mode='nearest')
         out = (1-gamma)*out + gamma*x
         # out = self.fuse_conv(out)
