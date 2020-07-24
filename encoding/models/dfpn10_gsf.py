@@ -166,9 +166,9 @@ class dfpn10_gsfHead(nn.Module):
 class localUp(nn.Module):
     def __init__(self, in_channels, out_channels, norm_layer, up_kwargs):
         super(localUp, self).__init__()
-        self.key_dim = in_channels1//8
+        self.key_dim = in_channels//8
 
-        self.refine = nn.Sequential(nn.Conv2d(in_channels, self.key_dim, 1, padding=0, dilation=1, bias=False))
+        self.refine = nn.Sequential(nn.Conv2d(in_channels, self.key_dim, 1, padding=0, dilation=1, bias=True))
         self.unfold = nn.Unfold(3, 1, 1, 1)
 
         self.weight = nn.Parameters(torch.empty(out_channels, out_channels, 3*3))
