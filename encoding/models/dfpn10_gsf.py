@@ -192,7 +192,7 @@ class localUp(nn.Module):
         out = F.pad(x, (0, h-hd, 0, w-wd))
 
         unfold_out = self.unfold(out).view(n, -1, 3*3, h, w)*att.unsqueeze(1).expand(n,ch,3*3,h,w)
-        out = torch.einsum('ock, nckhw -> nohw', self.weight, unfold_out)+self.bias.expand(n,ch,h,w)
+        out = torch.einsum('ock, nckhw -> nohw', self.weight, unfold_out)+self.bias.view(1, -1, 1, 1)
         return out
 
 def get_dfpn10_gsf(dataset='pascal_voc', backbone='resnet50', pretrained=False,
