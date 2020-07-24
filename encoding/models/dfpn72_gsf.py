@@ -140,12 +140,7 @@ class localUp(nn.Module):
         #                            nn.Conv2d(in_channels, out_channels, 1, padding=0, dilation=1, bias=False),
         #                            norm_layer(out_channels),
         #                            nn.ReLU())
-        # self.connect = nn.Sequential(nn.Conv2d(in_channels, out_channels, 1, padding=0, dilation=1, bias=False),
-        #                            norm_layer(out_channels),
-        #                            nn.ReLU(),
-        #                            nn.Conv2d(out_channels, out_channels, 3, padding=1, dilation=1, bias=False),
-        #                            norm_layer(out_channels),
-        #                            nn.ReLU())
+
         self.connect = Bottleneck(inplanes = in_channels, planes=in_channels//4, outplanes=out_channels, stride=1, dilation=1, norm_layer=norm_layer)
         self._up_kwargs = up_kwargs
 
