@@ -186,13 +186,13 @@ class localUp(nn.Module):
         att = torch.sigmoid(energy)
 
         _,ch,ho,wo = out.size()
-        w = torch.ones((ch, 1, 1, 1)).to(out.device)
-        x = F.conv_transpose2d(out, w, stride=2, groups=ch)
+        weight = torch.ones((ch, 1, 1, 1)).to(out.device)
+        x = F.conv_transpose2d(out, weight, stride=2, groups=ch)
         _,_,hd,wd = x.size()
-        out = F.pad(x, (0, ho-hd, 0, wo-wd))
+        out = F.pad(x, (0, h-hd, 0, w-wd))
 
-        unfold_out = self.unfold(out).view(n, -1, 3*3, h, w)*att.expand(n,ch,3*3,ho,wo)
-        out = torch.einsum('ock, nckhw -> nohw', self.weight, unfold_out)+self.bias.expand(n,ch,ho,wo)
+        unfold_out = self.unfold(out).view(n, -1, 3*3, h, w)*att.expand(n,ch,3*3,h,w)
+        out = torch.einsum('ock, nckhw -> nohw', self.weight, unfold_out)+self.bias.expand(n,ch,h,w)
         return out
 
 def get_dfpn10_gsf(dataset='pascal_voc', backbone='resnet50', pretrained=False,
