@@ -186,7 +186,7 @@ class localUp(nn.Module):
         att = torch.sigmoid(energy)
 
         _,ch,ho,wo = out.size()
-        w = torch.ones((ch, 1, 1, 1)).to(out.device
+        w = torch.ones((ch, 1, 1, 1)).to(out.device)
         x = F.conv_transpose2d(out, w, stride=2, groups=ch)
         _,_,hd,wd = x.size()
         out = F.pad(x, (0, ho-hd, 0, wo-wd))
