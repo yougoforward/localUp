@@ -171,8 +171,8 @@ class localUp(nn.Module):
         self.refine = nn.Sequential(nn.Conv2d(in_channels, self.key_dim, 1, padding=0, dilation=1, bias=True))
         self.unfold = nn.Unfold(3, 1, 1, 1)
 
-        self.weight = nn.Parameters(torch.empty(out_channels, out_channels, 3*3))
-        self.bias = nn.Parameters(torch.zeros(out_channels))
+        self.weight = nn.Parameter(torch.empty(out_channels, out_channels, 3*3))
+        self.bias = nn.Parameter(torch.zeros(out_channels))
 
         nn.init.kaiming_normal_(self.weight, mode='fan_out', nonlinearity='relu')
 
