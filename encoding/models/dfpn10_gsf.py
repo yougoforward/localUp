@@ -153,13 +153,13 @@ class localUp(nn.Module):
         c2 = F.interpolate(c2, (h,w), **self._up_kwargs)
         c2 = F.normalize(self.refine2(c2))
 
-        unfold_up_c2 = self.unfold(c2).permute(0,2,1).view(n, h*w, -1, 3*3)
+        unfold_up_c2 = self.unfold(c2).view(n, self.key_dim, 3*3, h, w)
         # torch.nn.functional.unfold(input, kernel_size, dilation=1, padding=0, stride=1)
-        energy = torch.matmul(c1.view(n, -1, h*w).permute(0,2,1).unsqueeze(2), unfold_up_c2).squeeze(2) #n,h*w,3x3
-        att = torch.softmax(energy, dim=-1)
+        energy = torch.einsum('nchw, nckhw -> nkhw', c1, unfold_up_c2)
+        att = torch.softmax(energy, dim=1)
         out = F.interpolate(out, (h,w), **self._up_kwargs)
-        unfold_out = self.unfold(out).permute(0,2,1).view(n, h*w, -1, 3*3)
-        out = torch.matmul(unfold_out, att.unsqueeze(3)).squeeze(3).permute(0,2,1).view(n,-1,h,w)
+        unfold_out = self.unfold(out).view(n, -1, 3*3, h, w)
+        out = torch.einsum('nkhw, nckhw -> nchw', c1, unfold_out)
         return out
 
 def get_dfpn10_gsf(dataset='pascal_voc', backbone='resnet50', pretrained=False,
