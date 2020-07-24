@@ -146,7 +146,7 @@ class localUp(nn.Module):
         #                            nn.Conv2d(out_channels, out_channels, 3, padding=1, dilation=1, bias=False),
         #                            norm_layer(out_channels),
         #                            nn.ReLU())
-        self.connect = Bottleneck(in_channels, in_channels//4, out_channels)
+        self.connect = Bottleneck(inplanes = in_channels, planes=in_channels//4, outplanes=out_channels, stride=1, dilation=1, norm_layer=norm_layer)
         self._up_kwargs = up_kwargs
 
     def forward(self, c1,c2):
