@@ -187,10 +187,11 @@ class localUp(nn.Module):
         att = torch.sigmoid(energy)
 
         _,ch,ho,wo = out.size()
-        weight = torch.ones((ch, 1, 1, 1)).to(out.device)
-        x = F.conv_transpose2d(out, weight, stride=2, groups=ch)
-        _,_,hd,wd = x.size()
-        out = F.pad(x, (0, h-hd, 0, w-wd))
+        # weight = torch.ones((ch, 1, 1, 1)).to(out.device)
+        # x = F.conv_transpose2d(out, weight, stride=2, groups=ch)
+        # _,_,hd,wd = x.size()
+        # out = F.pad(x, (0, h-hd, 0, w-wd))
+        out = F.fold(out, (h,w), 1,1,0,2)
 
         unfold_out = self.unfold(out).view(n, -1, 3*3, h, w)*att.unsqueeze(1)
         out = torch.einsum('ock, nckhw -> nohw', self.weight, unfold_out)+self.bias.view(1, -1, 1, 1)
