@@ -172,7 +172,7 @@ class localUp(nn.Module):
         self.unfold = nn.Unfold(3, 1, 1, 1)
 
         self.dconv_weight = nn.Parameter(torch.empty(out_channels, out_channels, 3*3))
-        self.dconv_bias = nn.Parameter(torch.zeros(out_channels))
+        # self.dconv_bias = nn.Parameter(torch.zeros(out_channels))
 
         nn.init.kaiming_normal_(self.weight, mode='fan_out', nonlinearity='relu')
         self.dconv_bn_relu = nn.Sequential(norm_layer(out_channels), nn.Relu())
@@ -194,7 +194,9 @@ class localUp(nn.Module):
         out = F.fold(out.view(n,ch,ho*wo), (h,w), 1,1,0,2)
 
         unfold_out = self.unfold(out).view(n, -1, 3*3, h, w)*att.unsqueeze(1)
-        out = torch.einsum('ock, nckhw -> nohw', self.weight, unfold_out)+self.bias.view(1, -1, 1, 1)
+        out = torch.einsum('ock, nckhw -> nohw', self.dconv_weight, unfold_out)
+        # out = out +self.dconv_bias.view(1, -1, 1, 1)
+        out =self.dconv_bn_relu(out)
         return out
 
 def get_dfpn10_gsf(dataset='pascal_voc', backbone='resnet50', pretrained=False,
