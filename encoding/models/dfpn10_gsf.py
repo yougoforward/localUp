@@ -168,7 +168,10 @@ class localUp(nn.Module):
         super(localUp, self).__init__()
         self.key_dim = in_channels//8
 
-        self.refine = nn.Sequential(nn.Conv2d(in_channels, self.key_dim, 1, padding=0, dilation=1, bias=True))
+        self.refine = nn.Sequential(nn.Conv2d(in_channels, self.key_dim, 3, padding=1, dilation=1, bias=False),
+                                   norm_layer(self.key_dim),
+                                   nn.ReLU(),
+                                    nn.Conv2d(self.key_dim, 3*3, 3, padding=1, dilation=1, bias=True))
         self.unfold = nn.Unfold(3, 1, 1, 1)
 
         self.dconv_weight = nn.Parameter(torch.empty(out_channels, out_channels, 3*3))
@@ -179,11 +182,11 @@ class localUp(nn.Module):
 
     def forward(self, c1,out):
         n,c,h,w =c1.size()
-        c1 = self.refine(c1) # n, 64, h, w
+        energy = self.refine(c1) # n, 64, h, w
 
-        unfold_up_c1 = self.unfold(c1).view(n, self.key_dim, 3*3, h, w)
+        # unfold_up_c1 = self.unfold(c1).view(n, self.key_dim, 3*3, h, w)
         # torch.nn.functional.unfold(input, kernel_size, dilation=1, padding=0, stride=1)
-        energy = torch.einsum('nchw, nckhw -> nkhw', c1, unfold_up_c1)
+        # energy = torch.einsum('nchw, nckhw -> nkhw', c1, unfold_up_c1)
         att = torch.sigmoid(energy)
 
         _,ch,ho,wo = out.size()
