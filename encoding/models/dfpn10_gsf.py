@@ -175,7 +175,7 @@ class localUp(nn.Module):
         # self.dconv_bias = nn.Parameter(torch.zeros(out_channels))
 
         nn.init.kaiming_normal_(self.dconv_weight, mode='fan_out', nonlinearity='relu')
-        self.dconv_bn_relu = nn.Sequential(norm_layer(out_channels), nn.ReLu())
+        self.dconv_bn_relu = nn.Sequential(norm_layer(out_channels), nn.ReLU())
 
     def forward(self, c1,out):
         n,c,h,w =c1.size()
