@@ -40,10 +40,11 @@ class dfpn71_gsfHead(nn.Module):
         self._up_kwargs = up_kwargs
 
         inter_channels = in_channels // 4
-        self.conv5 = nn.Sequential(nn.Conv2d(in_channels, inter_channels, 3, padding=1, bias=False),
-                                   norm_layer(inter_channels),
-                                   nn.ReLU(),
-                                   )
+        self.conv5 = Bottleneck(inplanes = in_channels, planes=in_channels//4, outplanes=inter_channels, stride=1, dilation=1, norm_layer=norm_layer)
+        # self.conv5 = nn.Sequential(nn.Conv2d(in_channels, inter_channels, 3, padding=1, bias=False),
+        #                            norm_layer(inter_channels),
+        #                            nn.ReLU(),
+        #                            )
         self.gap = nn.Sequential(nn.AdaptiveAvgPool2d(1),
                             nn.Conv2d(in_channels, inter_channels, 1, bias=False),
                             norm_layer(inter_channels),
@@ -98,11 +99,20 @@ class dfpn71_gsfHead(nn.Module):
                                    )
     def forward(self, c1,c2,c3,c4,c20,c30,c40):
         _,_, h,w = c2.size()
+        # out4 = self.conv5(c4)
         p4_1 = self.dconv4_1(c4)
         p4_8 = self.dconv4_8(c4)
-        p3_1,p3_8 = self.localUp4(c3, p4_1, p4_8)
-        p2_1,p2_8 = self.localUp3(c2, p3_1, p3_8)
-        
+        out4 = self.project4(torch.cat([p4_1,p4_8], dim=1))
+
+        out3 = self.localUp4(c3, out4)
+        p3_1 = self.dconv3_1(out3)
+        p3_8 = self.dconv3_8(out3)
+        out3 = self.project3(torch.cat([p3_1,p3_8], dim=1))
+
+        out2 = self.localUp3(c2, out3)
+        p2_1 = self.dconv2_1(out2)
+        p2_8 = self.dconv2_8(out2)
+        # out = self.localUp2(c1, out)
         p4_1 = F.interpolate(p4_1, (h,w), **self._up_kwargs)
         p4_8 = F.interpolate(p4_8, (h,w), **self._up_kwargs)
         p3_1 = F.interpolate(p3_1, (h,w), **self._up_kwargs)
@@ -125,33 +135,63 @@ class dfpn71_gsfHead(nn.Module):
 class localUp(nn.Module):
     def __init__(self, in_channels, out_channels, norm_layer, up_kwargs):
         super(localUp, self).__init__()
-        self.dconv2_1 = nn.Sequential(nn.Conv2d(out_channels*3, out_channels, 3, padding=1, dilation=1, bias=False),
-                                   norm_layer(out_channels),
-                                   nn.ReLU(),
-                                   )
-        self.dconv2_8 = nn.Sequential(nn.Conv2d(out_channels*3, out_channels, 3, padding=8, dilation=8, bias=False),
-                                   norm_layer(out_channels),
-                                   nn.ReLU(),
-                                   )
-        self.connect = nn.Sequential(
-                                   nn.Conv2d(in_channels, out_channels, 1, padding=0, dilation=1, bias=False),
-                                   norm_layer(out_channels),
-                                   nn.ReLU())
+        # self.connect = nn.Sequential(nn.Conv2d(in_channels, in_channels, 3, padding=1, dilation=1, bias=False),
+        #                            norm_layer(in_channels),
+        #                            nn.ReLU(),
+        #                            nn.Conv2d(in_channels, out_channels, 1, padding=0, dilation=1, bias=False),
+        #                            norm_layer(out_channels),
+        #                            nn.ReLU())
 
+        self.connect = Bottleneck(inplanes = in_channels, planes=in_channels//4, outplanes=out_channels, stride=1, dilation=1, norm_layer=norm_layer)
         self._up_kwargs = up_kwargs
 
-    def forward(self, c1,c2_1,c2_8):
+    def forward(self, c1,c2):
         n,c,h,w =c1.size()
         c1 = self.connect(c1) # n, 64, h, w
+        c2 = F.interpolate(c2, (h,w), **self._up_kwargs)
+        out = c1+c2
+    
+        return out
 
-        c2_1 = F.interpolate(c2_1, (h,w), **self._up_kwargs)
-        c2_8 = F.interpolate(c2_8, (h,w), **self._up_kwargs)
+class Bottleneck(nn.Module):
+    """ResNet Bottleneck
+    """
+    def __init__(self, inplanes, planes, outplanes, stride=1, dilation=1, norm_layer=None):
+        super(Bottleneck, self).__init__()
+        self.conv1 = nn.Conv2d(inplanes, planes, kernel_size=1, bias=False)
+        self.bn1 = norm_layer(planes)
+        self.conv2 = nn.Conv2d(
+            planes, planes, kernel_size=3, stride=stride,
+            padding=dilation, dilation=dilation, bias=False)
+        self.bn2 = norm_layer(planes)
+        self.conv3 = nn.Conv2d(
+            planes, outplanes, kernel_size=1, bias=False)
+        self.bn3 = norm_layer(outplanes)
+        self.relu = nn.ReLU(inplace=True)
 
-        c12 = torch.cat([c1, c2_1, c2_8], dim=1)
-        p2_1 = self.dconv2_1(c12)
-        p2_8 = self.dconv2_8(c12)    
-        return p2_1,p2_8
+        self.skip = nn.Sequential(
+                nn.Conv2d(inplanes, outplanes,
+                          kernel_size=1, stride=stride, bias=False),
+                norm_layer(outplanes),
+            )
+    def forward(self, x):
+        residual = self.skip(x)
 
+        out = self.conv1(x)
+        out = self.bn1(out)
+        out = self.relu(out)
+
+        out = self.conv2(out)
+        out = self.bn2(out)
+        out = self.relu(out)
+
+        out = self.conv3(out)
+        out = self.bn3(out)
+
+        out += residual
+        out = self.relu(out)
+
+        return out
 
 def get_dfpn71_gsf(dataset='pascal_voc', backbone='resnet50', pretrained=False,
                  root='~/.encoding/models', **kwargs):
