@@ -134,30 +134,51 @@ class dfpn9_gsfHead(nn.Module):
 class localUp(nn.Module):
     def __init__(self, in_channels, out_channels, norm_layer, up_kwargs):
         super(localUp, self).__init__()
-        # self.connect = nn.Sequential(nn.Conv2d(in_channels, in_channels, 3, padding=1, dilation=1, bias=False),
-        #                            norm_layer(in_channels),
-        #                            nn.ReLU(),
-        #                            nn.Conv2d(in_channels, out_channels, 1, padding=0, dilation=1, bias=False),
-        #                            norm_layer(out_channels),
-        #                            nn.ReLU())
-        self.connect = nn.Sequential(
-                                   nn.Conv2d(in_channels, out_channels, 1, padding=0, dilation=1, bias=False),
-                                   norm_layer(out_channels),
+        self.connect = nn.Sequential(nn.Conv2d(in_channels, in_channels//4, 1, padding=0, dilation=1, bias=False),
+                                   norm_layer(in_channels//4),
                                    nn.ReLU())
-        # self.connect = Bottleneck(inplanes = in_channels, planes=in_channels//4, outplanes=out_channels, stride=1, dilation=1, norm_layer=norm_layer)
+
         self._up_kwargs = up_kwargs
-        # self.refine = nn.Sequential(
-        #                            nn.Conv2d(out_channels, out_channels, 3, padding=1, dilation=1, bias=False),
-        #                            norm_layer(out_channels),
-        #                            nn.ReLU())
-        self.refine = Bottleneck(inplanes = 2*out_channels, planes=2*out_channels//4, outplanes=out_channels, stride=1, dilation=1, norm_layer=norm_layer)
+        self.refine = nn.Sequential(nn.Conv2d(in_channels//4+ out_channels, out_channels, 1, padding=0, dilation=1, bias=False),
+                                   norm_layer(out_channels),
+                                   nn.ReLU(),
+                                    )
+
     def forward(self, c1,c2):
         n,c,h,w =c1.size()
         c1 = self.connect(c1) # n, 64, h, w
         c2 = F.interpolate(c2, (h,w), **self._up_kwargs)
         out = torch.cat([c1,c2], dim=1)
-        out =self.refine(out)
+        out = self.refine(out)
         return out
+
+# class localUp(nn.Module):
+#     def __init__(self, in_channels, out_channels, norm_layer, up_kwargs):
+#         super(localUp, self).__init__()
+#         # self.connect = nn.Sequential(nn.Conv2d(in_channels, in_channels, 3, padding=1, dilation=1, bias=False),
+#         #                            norm_layer(in_channels),
+#         #                            nn.ReLU(),
+#         #                            nn.Conv2d(in_channels, out_channels, 1, padding=0, dilation=1, bias=False),
+#         #                            norm_layer(out_channels),
+#         #                            nn.ReLU())
+#         self.connect = nn.Sequential(
+#                                    nn.Conv2d(in_channels, out_channels, 1, padding=0, dilation=1, bias=False),
+#                                    norm_layer(out_channels),
+#                                    nn.ReLU())
+#         # self.connect = Bottleneck(inplanes = in_channels, planes=in_channels//4, outplanes=out_channels, stride=1, dilation=1, norm_layer=norm_layer)
+#         self._up_kwargs = up_kwargs
+#         # self.refine = nn.Sequential(
+#         #                            nn.Conv2d(out_channels, out_channels, 3, padding=1, dilation=1, bias=False),
+#         #                            norm_layer(out_channels),
+#         #                            nn.ReLU())
+#         self.refine = Bottleneck(inplanes = 2*out_channels, planes=2*out_channels//4, outplanes=out_channels, stride=1, dilation=1, norm_layer=norm_layer)
+#     def forward(self, c1,c2):
+#         n,c,h,w =c1.size()
+#         c1 = self.connect(c1) # n, 64, h, w
+#         c2 = F.interpolate(c2, (h,w), **self._up_kwargs)
+#         out = torch.cat([c1,c2], dim=1)
+#         out =self.refine(out)
+#         return out
 
 class Bottleneck(nn.Module):
     """ResNet Bottleneck
