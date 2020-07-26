@@ -66,22 +66,22 @@ class dfpn5_gsfHead(nn.Module):
                                    norm_layer(inter_channels),
                                    nn.ReLU()
                                    )
-        self.dconv4_1 = nn.Sequential(nn.Conv2d(in_channels, inter_channels, 1, padding=0, dilation=1, bias=False),
+        self.dconv4_1 = nn.Sequential(nn.Conv2d(inter_channels, inter_channels, 1, padding=0, dilation=1, bias=False),
                                    norm_layer(inter_channels),
                                    nn.ReLU()
                                    )
         self.dconv4_2 = nn.Sequential(
-                                   nn.Conv2d(in_channels, inter_channels, 3, padding=2, dilation=2, bias=False),
+                                   nn.Conv2d(inter_channels, inter_channels, 3, padding=2, dilation=2, bias=False),
                                    norm_layer(inter_channels),
                                    nn.ReLU(),
                                    )
         self.dconv4_4 = nn.Sequential(
-                                   nn.Conv2d(in_channels, inter_channels, 3, padding=4, dilation=4, bias=False),
+                                   nn.Conv2d(inter_channels, inter_channels, 3, padding=4, dilation=4, bias=False),
                                    norm_layer(inter_channels),
                                    nn.ReLU(),
                                    )
         self.dconv4_8 = nn.Sequential(
-                                   nn.Conv2d(in_channels, inter_channels, 3, padding=8, dilation=8, bias=False),
+                                   nn.Conv2d(inter_channels, inter_channels, 3, padding=8, dilation=8, bias=False),
                                    norm_layer(inter_channels),
                                    nn.ReLU(),
                                    )
