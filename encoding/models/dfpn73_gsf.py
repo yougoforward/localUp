@@ -59,11 +59,14 @@ class dfpn73_gsfHead(nn.Module):
         self.localUp3=localUp(512, inter_channels, norm_layer, up_kwargs)
         self.localUp4=localUp(1024, inter_channels, norm_layer, up_kwargs)
 
-        self.dconv4_1 = nn.Sequential(nn.Conv2d(in_channels, inter_channels, 3, padding=1, dilation=1, bias=False),
+        self.dconv4_1 = nn.Sequential(nn.Conv2d(in_channels, inter_channels, 1, padding=0, dilation=1, bias=False),
                                    norm_layer(inter_channels),
                                    nn.ReLU(),
                                    )
-        self.dconv4_8 = nn.Sequential(nn.Conv2d(in_channels, inter_channels, 3, padding=8, dilation=8, bias=False),
+        self.dconv4_8 = nn.Sequential(nn.Conv2d(in_channels, inter_channels, 1, padding=0, dilation=1, bias=False),
+                                   norm_layer(inter_channels),
+                                   nn.ReLU(),
+                                   nn.Conv2d(inter_channels, inter_channels, 3, padding=8, dilation=8, bias=False),
                                    norm_layer(inter_channels),
                                    nn.ReLU(),
                                    )
@@ -140,8 +143,17 @@ class localUp(nn.Module):
         #                            nn.Conv2d(in_channels, out_channels, 1, padding=0, dilation=1, bias=False),
         #                            norm_layer(out_channels),
         #                            nn.ReLU())
-
-        self.connect = Bottleneck(inplanes = in_channels, planes=in_channels//4, outplanes=out_channels, stride=1, dilation=1, norm_layer=norm_layer)
+        # self.connect = nn.Sequential(
+                                #    nn.Conv2d(in_channels, out_channels, 1, padding=0, dilation=1, bias=False),
+                                #    norm_layer(out_channels),
+                                #    nn.ReLU())
+        self.connect = nn.Sequential(nn.Conv2d(in_channels, in_channels//4, 1, padding=0, dilation=1, bias=False),
+                                   norm_layer(in_channels//4),
+                                   nn.ReLU(),
+                                   nn.Conv2d(in_channels//4, out_channels, 1, padding=0, dilation=1, bias=False),
+                                   norm_layer(out_channels),
+                                   nn.ReLU())
+        # self.connect = Bottleneck(inplanes = in_channels, planes=in_channels//4, outplanes=out_channels, stride=1, dilation=1, norm_layer=norm_layer)
         self._up_kwargs = up_kwargs
         self.refine = nn.Sequential(
                                    nn.Conv2d(out_channels, out_channels, 3, padding=1, dilation=1, bias=False),
