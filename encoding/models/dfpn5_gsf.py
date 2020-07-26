@@ -58,15 +58,15 @@ class dfpn4_gsfHead(nn.Module):
         # self.localUp2=localUp(256, in_channels, norm_layer, up_kwargs)
         self.localUp3=localUp(512, inter_channels, norm_layer, up_kwargs)
         self.localUp4=localUp(1024, inter_channels, norm_layer, up_kwargs)
-        self.dconv2_1 = nn.Sequential(nn.Conv2d(inter_channels, inter_channels, 1, padding=0, dilation=1, bias=False),
+        self.dconv2_1 = nn.Sequential(nn.Conv2d(inter_channels, inter_channels, 3, padding=1, dilation=1, bias=False),
                                    norm_layer(inter_channels),
                                    nn.ReLU()
                                    )
-        self.dconv3_1 = nn.Sequential(nn.Conv2d(inter_channels, inter_channels, 1, padding=0, dilation=1, bias=False),
+        self.dconv3_1 = nn.Sequential(nn.Conv2d(inter_channels, inter_channels, 3, padding=1, dilation=1, bias=False),
                                    norm_layer(inter_channels),
                                    nn.ReLU()
                                    )
-        self.dconv4_1 = nn.Sequential(nn.Conv2d(in_channels, inter_channels, 1, padding=0, dilation=1, bias=False),
+        self.dconv4_1 = nn.Sequential(nn.Conv2d(in_channels, inter_channels, 3, padding=1, dilation=1, bias=False),
                                    norm_layer(inter_channels),
                                    nn.ReLU()
                                    )
