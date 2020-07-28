@@ -158,27 +158,48 @@ class Bottleneck(nn.Module):
     """
     def __init__(self, inplanes, planes, outplanes, stride=1, dilation=1, norm_layer=None):
         super(Bottleneck, self).__init__()
-        self.dconv0 = nn.Sequential(nn.Conv2d(inplanes, outplanes, 1, padding=0, dilation=1, bias=False),
-                                   norm_layer(outplanes),
+        self.conv1 = nn.Sequential(nn.Conv2d(inplanes, planes, kernel_size=1, bias=False),
+                                    norm_layer(planes),
+                                    nn.ReLU())
+        self.relu = nn.ReLU()
+
+        self.skip = nn.Sequential(
+                nn.Conv2d(inplanes, outplanes, kernel_size=1, stride=stride, bias=False),
+                norm_layer(outplanes),
+            )
+        self.dconv1 = nn.Sequential(nn.Conv2d(inplanes, planes, kernel_size=1, bias=False),
+                                    norm_layer(planes),
+                                    nn.ReLU(),
+                                    nn.Conv2d(planes, planes, 3, padding=1, dilation=1, stride=stride, bias=False),
+                                   norm_layer(planes),
+                                   nn.ReLU()
                                    )
-        self.dconv1 = nn.Sequential(nn.Conv2d(inplanes, outplanes, 3, padding=1, dilation=1, bias=False),
-                                   norm_layer(outplanes),
+        self.dconv2 = nn.Sequential(nn.Conv2d(inplanes, planes, kernel_size=1, bias=False),
+                                    norm_layer(planes),
+                                    nn.ReLU(),
+                                    nn.Conv2d(planes, planes, 3, padding=2, dilation=2, stride=stride, bias=False),
+                                   norm_layer(planes),
+                                   nn.ReLU()
                                    )
-        self.dconv2 = nn.Sequential(nn.Conv2d(inplanes, outplanes, 3, padding=2, dilation=2, bias=False),
-                                   norm_layer(outplanes),
-                                   )
-        self.dconv3 = nn.Sequential(nn.Conv2d(inplanes, outplanes, 3, padding=3, dilation=3, bias=False),
-                                   norm_layer(outplanes),
-                                   ) 
-        self.relu = nn.ReLU()                              
+        # self.dconv3 = nn.Sequential(nn.Conv2d(inplanes, planes, kernel_size=1, bias=False),
+        #                             norm_layer(planes),
+        #                             nn.ReLU(),
+        #                             nn.Conv2d(planes, planes, 3, padding=3, dilation=3, stride=stride, bias=False),
+        #                            norm_layer(planes),
+        #                            nn.ReLU()
+        #                            )
+        self.conv3 = nn.Sequential(nn.Conv2d(2*planes, outplanes, kernel_size=1, bias=False),
+                                    norm_layer(outplanes),)                                  
     def forward(self, x):
-        out0 = self.dconv0(x)
-        out1 = self.dconv1(x)
-        out2 = self.dconv2(x)
-        out3 = self.dconv3(x)
-        
-        out = out0+out1+out2+out3
-        out = self.relu(out)
+        residual = self.skip(x)
+        dout = []
+        dout.append(self.dconv1(x))
+        dout.append(self.dconv2(x))
+        # dout.append(self.dconv3(x))
+        out = torch.cat(dout,dim=1)
+        out = self.conv3(out)
+
+        out = self.relu(out + residual)
 
         return out
 
