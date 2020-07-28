@@ -139,11 +139,11 @@ class localUp(nn.Module):
                                    nn.ReLU())
 
         self._up_kwargs = up_kwargs
-        self.refine = nn.Sequential(nn.Conv2d(2*out_channels, out_channels, 3, padding=1, dilation=1, bias=False),
-                                   norm_layer(out_channels),
-                                   nn.ReLU(),
-                                    )
-        # self.refine = Bottleneck(inplanes = 2*out_channels, planes=2*out_channels//4, outplanes=out_channels, stride=1, dilation=1, norm_layer=norm_layer)
+        # self.refine = nn.Sequential(nn.Conv2d(2*out_channels, out_channels, 3, padding=1, dilation=1, bias=False),
+        #                            norm_layer(out_channels),
+        #                            nn.ReLU(),
+        #                             )
+        self.refine = Bottleneck(inplanes = 2*out_channels, planes=2*out_channels//4, outplanes=out_channels, stride=1, dilation=1, norm_layer=norm_layer)
     def forward(self, c1,c2):
         n,c,h,w =c1.size()
         c1 = self.connect(c1) # n, 64, h, w
@@ -189,11 +189,11 @@ class Bottleneck(nn.Module):
         out = self.bn1(out)
         out = self.relu(out)
 
-        out1 = self.dconv1(out)
-        out2 = self.dconv2(out)
-        out3 = self.dconv3(out)
+        out = self.dconv1(out)
+        # out2 = self.dconv2(out)
+        # out3 = self.dconv3(out)
         
-        out = out1+out2+out3
+        # out = out1+out2+out3
 
         out = self.conv3(out)
         out = self.bn3(out)
