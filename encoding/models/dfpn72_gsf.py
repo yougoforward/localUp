@@ -159,16 +159,16 @@ class Bottleneck(nn.Module):
     def __init__(self, inplanes, planes, outplanes, stride=1, dilation=1, norm_layer=None):
         super(Bottleneck, self).__init__()
         self.dconv0 = nn.Sequential(nn.Conv2d(inplanes, outplanes, 1, padding=0, dilation=1, bias=False),
-                                   norm_layer(planes),
+                                   norm_layer(outplanes),
                                    )
         self.dconv1 = nn.Sequential(nn.Conv2d(inplanes, outplanes, 3, padding=1, dilation=1, bias=False),
-                                   norm_layer(planes),
+                                   norm_layer(outplanes),
                                    )
         self.dconv2 = nn.Sequential(nn.Conv2d(inplanes, outplanes, 3, padding=2, dilation=2, bias=False),
-                                   norm_layer(planes),
+                                   norm_layer(outplanes),
                                    )
         self.dconv3 = nn.Sequential(nn.Conv2d(inplanes, outplanes, 3, padding=3, dilation=3, bias=False),
-                                   norm_layer(planes),
+                                   norm_layer(outplanes),
                                    ) 
         self.relu = nn.ReLU()                              
     def forward(self, x):
