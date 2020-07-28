@@ -212,11 +212,11 @@ class Bottleneck(nn.Module):
         residual = self.skip(x)
 
         out = self.conv1(x)
-        out = []
-        out.append(self.dconv1(out))
-        out.append(self.dconv2(out))
-        out.append(self.dconv3(out))
-        out = torch.cat(out,dim=1)
+        dout = []
+        dout.append(self.dconv1(out))
+        dout.append(self.dconv2(out))
+        dout.append(self.dconv3(out))
+        out = torch.cat(dout,dim=1)
         out = self.conv3(out)
 
         out = self.relu(out + residual)
