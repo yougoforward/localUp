@@ -19,7 +19,75 @@ from torch.autograd import Variable
 
 torch_ver = torch.__version__[:3]
 
-__all__ = ['SegmentationLosses', 'PyramidPooling', 'JPU', 'JPU_X', 'Mean', 'SegmentationLosses_oc']
+__all__ = ['Focal_SegmentationLosses', 'SegmentationLosses', 'PyramidPooling', 'JPU', 'JPU_X', 'Mean', 'SegmentationLosses_oc']
+
+class Focal_SegmentationLosses(CrossEntropyLoss):
+    """2D Cross Entropy Loss with Auxilary Loss"""
+    def __init__(self, se_loss=False, se_weight=0.2, nclass=-1,
+                 aux=False, aux_weight=0.4, weight=None,
+                 ignore_index=-1, reduction='None'):
+        super(Focal_SegmentationLosses, self).__init__(weight, ignore_index=ignore_index, size_average=False, reduce= False, reduction=reduction)
+        self.se_loss = se_loss
+        self.aux = aux
+        self.nclass = nclass
+        self.se_weight = se_weight
+        self.aux_weight = aux_weight
+        self.bceloss = BCELoss(weight, reduction=reduction)
+        self.gamma = 2.0
+        self.alpha = 1.0
+    def forward(self, *inputs):
+        if not self.se_loss and not self.aux:
+            return super(SegmentationLosses, self).forward(*inputs)
+        elif not self.se_loss:
+            pred1, pred2, target = tuple(inputs)
+            # *preds, target = tuple(inputs)
+            # pred1, pred2 = tuple(preds[0])
+            valid = (target != self.ignore_index)
+            target_cp = target.clone()
+            target_cp[target_cp == self.ignore_index] = 0
+            n, c, h, w = pred2.size()
+            onehot_label = F.one_hot(target_cp, num_classes=self.nclass).float()
+            onehot_label = onehot_label.permute(0, 3, 1, 2)
+            ##focal loss
+            loss1 = torch.sum(-F.log_softmax(pred1, 1)*onehot_label, dim=1)
+            pt1 = torch.sum(F.softmax(pred1, 1)*onehot_label, dim=1)
+            fl_weight1 = self.alpha*(1-pt1)**self.gamma
+            loss1 = fl_weight1*loss1
+            loss1 = torch.mean(loss1[valid])
+            ##focal loss
+            loss2 = torch.sum(-F.log_softmax(pred2, 1)*onehot_label, dim=1)
+            pt2 = torch.sum(F.softmax(pred2, 1)*onehot_label, dim=1)
+            fl_weight2 = self.alpha*(1-pt2)**self.gamma
+            loss2 = fl_weight2*loss2
+            loss2 = torch.mean(loss2[valid])
+
+            return loss1 + self.aux_weight * loss2
+        elif not self.aux:
+            pred, se_pred, target = tuple(inputs)
+            se_target = self._get_batch_label_vector(target, nclass=self.nclass).type_as(pred)
+            loss1 = super(SegmentationLosses, self).forward(pred, target)
+            loss2 = self.bceloss(torch.sigmoid(se_pred), se_target)
+            return loss1 + self.se_weight * loss2
+        else:
+            pred1, se_pred, pred2, target = tuple(inputs)
+            se_target = self._get_batch_label_vector(target, nclass=self.nclass).type_as(pred1)
+            loss1 = super(SegmentationLosses, self).forward(pred1, target)
+            loss2 = super(SegmentationLosses, self).forward(pred2, target)
+            loss3 = self.bceloss(torch.sigmoid(se_pred), se_target)
+            return loss1 + self.aux_weight * loss2 + self.se_weight * loss3
+
+    @staticmethod
+    def _get_batch_label_vector(target, nclass):
+        # target is a 3D Variable BxHxW, output is 2D BxnClass
+        batch = target.size(0)
+        tvect = Variable(torch.zeros(batch, nclass))
+        for i in range(batch):
+            hist = torch.histc(target[i].cpu().data.float(),
+                               bins=nclass, min=0,
+                               max=nclass-1)
+            vect = hist>0
+            tvect[i] = vect
+        return tvect
 
 class SegmentationLosses(CrossEntropyLoss):
     """2D Cross Entropy Loss with Auxilary Loss"""

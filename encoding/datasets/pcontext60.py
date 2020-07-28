@@ -15,12 +15,12 @@ from tqdm import trange
 
 from .base import BaseDataset
 
-class ContextSegmentation(BaseDataset):
+class ContextSegmentation60(BaseDataset):
     BASE_DIR = 'VOCdevkit/VOC2010'
     NUM_CLASS = 60
     def __init__(self, root=os.path.expanduser('../../datasets/pcontext'), split='train',
                  mode=None, transform=None, target_transform=None, **kwargs):
-        super(ContextSegmentation, self).__init__(
+        super(ContextSegmentation60, self).__init__(
             root, split, mode, transform, target_transform, **kwargs)
         from detail import Detail
         #from detail import mask

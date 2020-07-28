@@ -5,7 +5,7 @@ from .pascal_voc import VOCSegmentation
 from .pascal_aug import VOCAugSegmentation
 from .pcontext import ContextSegmentation
 from .cityscapes import CitySegmentation
-# from .pcontext60 import ContextSegmentation
+from .pcontext60 import ContextSegmentation60
 from .cocostuff import CocostuffSegmentation
 from .focus_shi import Blur2Segmentation
 
@@ -15,6 +15,7 @@ datasets = {
     'pascal_voc': VOCSegmentation,
     'pascal_aug': VOCAugSegmentation,
     'pcontext': ContextSegmentation,
+    'pcontext60': ContextSegmentation60,
     'cityscapes': CitySegmentation,
     'cocostuff': CocostuffSegmentation,
     'focus_shi': Blur2Segmentation,
