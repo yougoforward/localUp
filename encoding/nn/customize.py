@@ -49,18 +49,23 @@ class Focal_SegmentationLosses(CrossEntropyLoss):
             onehot_label = F.one_hot(target_cp, num_classes=self.nclass).float()
             onehot_label = onehot_label.permute(0, 3, 1, 2)
             ##focal loss
+            logit1 = F.softmax(pred1, 1)
             loss1 = torch.sum(-F.log_softmax(pred1, 1)*onehot_label, dim=1)
-            pt1 = torch.sum(F.softmax(pred1, 1)*onehot_label, dim=1)
+            pt1 = torch.sum(logit1*onehot_label, dim=1)
             fl_weight1 = self.alpha*(1-pt1)**self.gamma
-            loss1 = fl_weight1*loss1
+            
+            fl_loss1 = fl_weight1*loss1
+            fl_valid = (pt1>0.5)
+            loss1[fl_valid]=fl_loss1[fl_valid]
             loss1 = torch.mean(loss1[valid])
-            ##focal loss
-            loss2 = torch.sum(-F.log_softmax(pred2, 1)*onehot_label, dim=1)
-            pt2 = torch.sum(F.softmax(pred2, 1)*onehot_label, dim=1)
-            fl_weight2 = self.alpha*(1-pt2)**self.gamma
-            loss2 = fl_weight2*loss2
-            loss2 = torch.mean(loss2[valid])
-
+            # ##focal loss
+            # logit2 = F.softmax(pred2, 1)
+            # loss2 = torch.sum(-F.log_softmax(pred2, 1)*onehot_label, dim=1)
+            # pt2 = torch.sum(logit2*onehot_label, dim=1)
+            # fl_weight2 = self.alpha*(1-pt2)**self.gamma
+            # loss2 = fl_weight2*loss2
+            # loss2 = torch.mean(loss2[valid])
+            loss2 = super(SegmentationLosses, self).forward(pred2, target)
             return loss1 + self.aux_weight * loss2
         elif not self.aux:
             pred, se_pred, target = tuple(inputs)
