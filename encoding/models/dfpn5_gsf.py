@@ -180,49 +180,98 @@ class localUp(nn.Module):
 #         out =self.refine(out)
 #         return out
 
+# class Bottleneck(nn.Module):
+#     """ResNet Bottleneck
+#     """
+#     def __init__(self, inplanes, planes, outplanes, stride=1, dilation=1, norm_layer=None):
+#         super(Bottleneck, self).__init__()
+#         self.conv1 = nn.Sequential(nn.Conv2d(inplanes, planes, kernel_size=1, bias=False),
+#                                     norm_layer(planes),
+#                                     nn.ReLU())
+#         self.relu = nn.ReLU()
+
+#         self.skip = nn.Sequential(
+#                 nn.Conv2d(inplanes, outplanes, kernel_size=1, stride=stride, bias=False),
+#                 norm_layer(outplanes),
+#             )
+#         self.dconv1 = nn.Sequential(nn.Conv2d(planes, planes, 3, padding=1, dilation=1, stride=stride, bias=False),
+#                                    norm_layer(planes),
+#                                    nn.ReLU()
+#                                    )
+#         self.dconv2 = nn.Sequential(nn.Conv2d(planes, planes, 3, padding=2, dilation=2, stride=stride, bias=False),
+#                                    norm_layer(planes),
+#                                    nn.ReLU()
+#                                    )
+#         self.dconv3 = nn.Sequential(nn.Conv2d(planes, planes, 3, padding=3, dilation=3, stride=stride, bias=False),
+#                                    norm_layer(planes),
+#                                    nn.ReLU()
+#                                    )
+#         self.conv3 = nn.Sequential(nn.Conv2d(planes, outplanes, kernel_size=1, bias=False),
+#                                     norm_layer(outplanes),)                                  
+#     def forward(self, x):
+#         residual = self.skip(x)
+
+#         out = self.conv1(x)
+#         dout = []
+#         dout.append(self.dconv1(out))
+#         dout.append(self.dconv2(out))
+#         dout.append(self.dconv3(out))
+#         out = sum(dout)
+#         out = self.conv3(out)
+
+#         out = self.relu(out + residual)
+
+#         return out
 class Bottleneck(nn.Module):
     """ResNet Bottleneck
     """
     def __init__(self, inplanes, planes, outplanes, stride=1, dilation=1, norm_layer=None):
         super(Bottleneck, self).__init__()
-        self.conv1 = nn.Sequential(nn.Conv2d(inplanes, planes, kernel_size=1, bias=False),
-                                    norm_layer(planes),
-                                    nn.ReLU())
-        self.relu = nn.ReLU()
+        self.conv1 = nn.Conv2d(inplanes, planes, kernel_size=1, bias=False)
+        self.bn1 = norm_layer(planes)
+        
+        self.conv3 = nn.Conv2d(
+            planes, outplanes, kernel_size=1, bias=False)
+        self.bn3 = norm_layer(outplanes)
+        self.relu = nn.ReLU(inplace=True)
 
         self.skip = nn.Sequential(
-                nn.Conv2d(inplanes, outplanes, kernel_size=1, stride=stride, bias=False),
+                nn.Conv2d(inplanes, outplanes,
+                          kernel_size=1, stride=stride, bias=False),
                 norm_layer(outplanes),
             )
-        self.dconv1 = nn.Sequential(nn.Conv2d(planes, planes, 3, padding=1, dilation=1, stride=stride, bias=False),
+        self.dconv1 = nn.Sequential(nn.Conv2d(planes, planes, 3, padding=1, dilation=1, bias=False),
                                    norm_layer(planes),
-                                   nn.ReLU()
+                                   nn.ReLU(),
                                    )
-        self.dconv2 = nn.Sequential(nn.Conv2d(planes, planes, 3, padding=2, dilation=2, stride=stride, bias=False),
+        self.dconv2 = nn.Sequential(nn.Conv2d(planes, planes, 3, padding=2, dilation=2, bias=False),
                                    norm_layer(planes),
-                                   nn.ReLU()
+                                   nn.ReLU(),
                                    )
-        self.dconv3 = nn.Sequential(nn.Conv2d(planes, planes, 3, padding=3, dilation=3, stride=stride, bias=False),
+        self.dconv3 = nn.Sequential(nn.Conv2d(planes, planes, 3, padding=3, dilation=3, bias=False),
                                    norm_layer(planes),
-                                   nn.ReLU()
-                                   )
-        self.conv3 = nn.Sequential(nn.Conv2d(planes, outplanes, kernel_size=1, bias=False),
-                                    norm_layer(outplanes),)                                  
+                                   nn.ReLU(),
+                                   )                                  
     def forward(self, x):
         residual = self.skip(x)
 
         out = self.conv1(x)
-        dout = []
-        dout.append(self.dconv1(out))
-        dout.append(self.dconv2(out))
-        dout.append(self.dconv3(out))
-        out = sum(dout)
-        out = self.conv3(out)
+        out = self.bn1(out)
+        out = self.relu(out)
 
-        out = self.relu(out + residual)
+        out1 = self.dconv1(out)
+        out2 = self.dconv2(out)
+        out3 = self.dconv3(out)
+        
+        out = out1+out2+out3
+
+        out = self.conv3(out)
+        out = self.bn3(out)
+
+        out += residual
+        out = self.relu(out)
 
         return out
-
 def get_dfpn5_gsf(dataset='pascal_voc', backbone='resnet50', pretrained=False,
                  root='~/.encoding/models', **kwargs):
     # infer number of classes
