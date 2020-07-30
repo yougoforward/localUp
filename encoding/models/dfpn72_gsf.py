@@ -152,8 +152,8 @@ class localUp(nn.Module):
         n,c,h,w =c1.size()
         c1 = self.connect(c1) # n, 64, h, w
         c2 = F.interpolate(c2, (h,w), **self._up_kwargs)
-        out = c1+c2        
-        # out = self.refine(out)
+        out = torch.cat([c1,c2], dim=1)        
+        out = self.refine(out)
         return out
 
 class Bottleneck(nn.Module):
