@@ -194,10 +194,10 @@ class Bottleneck(nn.Module):
         out = self.relu(out)
 
         out1 = self.dconv1(out)
-        out2 = self.dconv2(out)
-        # out3 = self.dconv3(out)
+        # out2 = self.dconv2(out)
+        out3 = self.dconv3(out)
         
-        out = torch.cat([out1, out2], dim=1)
+        out = torch.cat([out1, out3], dim=1)
 
         out = self.conv3(out)
         out = self.bn3(out)
