@@ -139,7 +139,11 @@ class localUp(nn.Module):
                                    nn.ReLU())
 
         self._up_kwargs = up_kwargs
-        self.refine = nn.Sequential(nn.Conv2d(out_channels, out_channels, 3, padding=1, dilation=1, bias=False),
+        # self.refine = nn.Sequential(nn.Conv2d(2*out_channels, out_channels, 3, padding=1, dilation=1, bias=False),
+        #                            norm_layer(out_channels),
+        #                            nn.ReLU(),
+        #                             )
+        self.refine = nn.Sequential(nn.Conv2d(2*out_channels, out_channels, 3, padding=1, dilation=1, bias=False),
                                    norm_layer(out_channels),
                                    nn.ReLU(),
                                     )
@@ -147,9 +151,14 @@ class localUp(nn.Module):
     def forward(self, c1,c2):
         n,c,h,w =c1.size()
         c1 = self.connect(c1) # n, 64, h, w
-        c2 = F.interpolate(c2, (h,w), **self._up_kwargs)
-        # out = torch.cat([c1,c2], dim=1)
-        out = c1+c2
+        # c2 = F.interpolate(c2, (h,w), **self._up_kwargs)
+        _,ch,ho,wo = c2.size()
+        # weight = torch.ones((ch, 1, 1, 1)).to(out.device)
+        # x = F.conv_transpose2d(out, weight, stride=2, groups=ch)
+        # _,_,hd,wd = x.size()
+        # out = F.pad(x, (0, h-hd, 0, w-wd))
+        c2 = F.fold(c2.view(n,ch,ho*wo), (h,w), 1,1,0,2)
+        out = torch.cat([c1,c2], dim=1)
         out = self.refine(out)
         return out
 

@@ -216,7 +216,7 @@ class Bottleneck(nn.Module):
         dout.append(self.dconv1(out))
         dout.append(self.dconv2(out))
         dout.append(self.dconv3(out))
-        out = torch.cat(dout,dim=1)
+        out = torch.cat(dout,dim=1)          
         out = self.conv3(out)
 
         out = self.relu(out + residual)
