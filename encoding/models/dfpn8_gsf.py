@@ -147,7 +147,7 @@ class localUp(nn.Module):
         #                            norm_layer(out_channels),
         #                            nn.ReLU(),
         #                             )
-        self.refine = Bottleneck(inplanes = 2*out_channels, planes=2*out_channels//4, outplanes=out_channels, stride=1, dilation=1, norm_layer=norm_layer)
+        self.refine = Bottleneck(inplanes = 2*out_channels, planes=out_channels, outplanes=out_channels, stride=1, dilation=1, norm_layer=norm_layer)
     def forward(self, c1,c2):
         n,c,h,w =c1.size()
         c1 = self.connect(c1) # n, 64, h, w
@@ -165,7 +165,7 @@ class Bottleneck(nn.Module):
         self.bn1 = norm_layer(planes)
         
         self.conv3 = nn.Conv2d(
-            2*planes, outplanes, kernel_size=1, bias=False)
+            planes, outplanes, kernel_size=1, bias=False)
         self.bn3 = norm_layer(outplanes)
         self.relu = nn.ReLU(inplace=True)
 
@@ -193,11 +193,11 @@ class Bottleneck(nn.Module):
         out = self.bn1(out)
         out = self.relu(out)
 
-        out1 = self.dconv1(out)
+        out = self.dconv1(out)
         # out2 = self.dconv2(out)
-        out3 = self.dconv3(out)
+        # out3 = self.dconv3(out)
         
-        out = torch.cat([out1, out3], dim=1)
+        # out = torch.cat([out1, out3], dim=1)
 
         out = self.conv3(out)
         out = self.bn3(out)
