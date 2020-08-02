@@ -143,7 +143,11 @@ class localUp(nn.Module):
         #                            norm_layer(out_channels),
         #                            nn.ReLU(),
         #                             )
-        self.refine = Bottleneck(inplanes = 2*out_channels, planes=2*out_channels//4, outplanes=out_channels, stride=1, dilation=1, norm_layer=norm_layer)
+        # self.refine = nn.Sequential(nn.Conv2d(2*out_channels, out_channels, 1, padding=0, dilation=1, bias=False),
+        #                            norm_layer(out_channels),
+        #                            nn.ReLU(),
+        #                             )
+        self.refine = Bottleneck(inplanes = 2*out_channels, planes=out_channels//2, outplanes=out_channels, stride=1, dilation=1, norm_layer=norm_layer)
     def forward(self, c1,c2):
         n,c,h,w =c1.size()
         c1 = self.connect(c1) # n, 64, h, w
@@ -157,28 +161,35 @@ class Bottleneck(nn.Module):
     """
     def __init__(self, inplanes, planes, outplanes, stride=1, dilation=1, norm_layer=None):
         super(Bottleneck, self).__init__()
-        
-        self.relu = nn.ReLU(inplace=True)
 
         self.skip = nn.Sequential(
-                nn.Conv2d(inplanes, outplanes,
+                nn.Conv2d(inplanes, planes,
                           kernel_size=1, stride=stride, bias=False),
-                norm_layer(outplanes),
+                norm_layer(planes),
             )
-        self.dconv1 = nn.Sequential(nn.Conv2d(inplanes, outplanes, 3, padding=1, dilation=1, bias=False),
-                                   norm_layer(outplanes),
-                                   nn.ReLU()
+        self.dconv1 = nn.Sequential(
+                                   nn.Conv2d(inplanes, planes, 3, padding=1, dilation=1, bias=False),
+                                   norm_layer(planes),
+                                   nn.ReLU(),
                                    )
-        self.project = nn.Sequential(nn.Conv2d(2*outplanes, outplanes, 1, padding=0, dilation=1, bias=False),
+        self.dconv2 = nn.Sequential(
+                                   nn.Conv2d(inplanes, planes, 3, padding=1, dilation=1, bias=False),
+                                   norm_layer(planes),
+                                   nn.ReLU(),
+                                   nn.Conv2d(planes, planes, 3, padding=1, dilation=1, bias=False),
+                                   norm_layer(planes),
+                                   nn.ReLU(),
+                                   )  
+        self.project = nn.Sequential(nn.Conv2d(3*planes, outplanes, 1, padding=0, dilation=1, bias=False),
                                    norm_layer(outplanes),
-                                   nn.ReLU()
-                                   )                           
+                                   nn.ReLU(),
+                                   )                             
     def forward(self, x):
         residual = self.skip(x)
-
-        out = self.dconv1(x)
-
-        out =torch.cat([residual, out], dim=1)
+        out1 = self.dconv1(x)
+        out2 = self.dconv2(x)
+        
+        out = torch.cat([residual, out1, out2], dim=1)
         out = self.project(out)
 
         return out
