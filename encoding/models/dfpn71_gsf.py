@@ -56,8 +56,8 @@ class dfpn71_gsfHead(nn.Module):
         self.conv6 = nn.Sequential(nn.Dropout2d(0.1), nn.Conv2d(2*inter_channels, out_channels, 1))
 
         # self.localUp2=localUp(256, in_channels, norm_layer, up_kwargs)
-        self.localUp3=localUp(512, inter_channels, norm_layer, up_kwargs)
-        self.localUp4=localUp(1024, inter_channels, norm_layer, up_kwargs)
+        self.localUp3=localUp(512, 256, inter_channels, norm_layer, up_kwargs)
+        self.localUp4=localUp(1024, 512, inter_channels, norm_layer, up_kwargs)
 
         self.dconv4_1 = nn.Sequential(nn.Conv2d(in_channels, inter_channels, 1, padding=0, dilation=1, bias=False),
                                    norm_layer(inter_channels),
@@ -132,9 +132,8 @@ class dfpn71_gsfHead(nn.Module):
         return self.conv6(out)
 
 class localUp(nn.Module):
-    def __init__(self, in_channels, out_channels, norm_layer, up_kwargs):
+    def __init__(self, in_channels, inter_channels, out_channels, norm_layer, up_kwargs):
         super(localUp, self).__init__()
-        inter_channels=128
         self.connect = nn.Sequential(nn.Conv2d(in_channels, inter_channels, 1, padding=0, dilation=1, bias=False),
                                    norm_layer(inter_channels),
                                    nn.ReLU())
