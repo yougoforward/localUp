@@ -177,16 +177,16 @@ class Bottleneck(nn.Module):
                                    norm_layer(planes),
                                    nn.ReLU()
                                    )  
-        self.project = nn.Sequential(nn.Conv2d(3*planes, outplanes, 1, padding=0, dilation=1, bias=False),
+        self.project = nn.Sequential(nn.Conv2d(2*planes, outplanes, 1, padding=0, dilation=1, bias=False),
                                    norm_layer(outplanes),
                                    nn.ReLU(),
-                                   )                             
+                                   )
     def forward(self, x):
-        residual = self.skip(x)
+        # residual = self.skip(x)
         out1 = self.dconv1(x)
         out2 = self.dconv2(x)
         
-        out = torch.cat([residual, out1, out2], dim=1)
+        out = torch.cat([out1, out2], dim=1)
         out = self.project(out)
 
         return out
