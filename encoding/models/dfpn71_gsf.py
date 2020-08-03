@@ -143,25 +143,17 @@ class localUp(nn.Module):
         #                            norm_layer(out_channels),
         #                            nn.ReLU(),
         #                             )
-        inter_channels = out_channels//2
+        inter_channels = out_channels
         self.refine = nn.Sequential(nn.Conv2d(2*out_channels, inter_channels, 1, padding=0, dilation=1, bias=False),
                                    norm_layer(inter_channels),
                                    nn.ReLU(),
                                    nn.Conv2d(inter_channels, inter_channels, 3, padding=1, dilation=1, bias=False),
                                    norm_layer(inter_channels),
                                    nn.ReLU(),
-                                   nn.Conv2d(inter_channels, out_channels, 1, padding=0, dilation=1, bias=False),
+                                   nn.Conv2d(inter_channels, out_channels, 3, padding=1, dilation=1, bias=False),
                                    norm_layer(out_channels),
                                     )
-        self.refine2 = nn.Sequential(nn.Conv2d(2*out_channels, inter_channels, 1, padding=0, dilation=1, bias=False),
-                                   norm_layer(inter_channels),
-                                   nn.ReLU(),
-                                   nn.Conv2d(inter_channels, inter_channels, 3, padding=2, dilation=2, bias=False),
-                                   norm_layer(inter_channels),
-                                   nn.ReLU(),
-                                   nn.Conv2d(inter_channels, out_channels, 1, padding=0, dilation=1, bias=False),
-                                   norm_layer(out_channels),
-                                    )
+
         self.relu = nn.ReLU()                           
         # self.refine = Bottleneck(inplanes = 2*out_channels, planes=2*out_channels//4, outplanes=out_channels, stride=1, dilation=1, norm_layer=norm_layer)
     def forward(self, c1,c2):
@@ -170,9 +162,7 @@ class localUp(nn.Module):
         c2 = F.interpolate(c2, (h,w), **self._up_kwargs)
         out = torch.cat([c1,c2], dim=1)
         out1 = self.refine(out)
-        out2 = self.refine2(out)
-
-        out = self.relu(c2+out1+out2)
+        out = self.relu(c2+out1)
         return out
 
 
