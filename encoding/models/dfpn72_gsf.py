@@ -134,7 +134,7 @@ class dfpn72_gsfHead(nn.Module):
 class localUp(nn.Module):
     def __init__(self, in_channels, out_channels, norm_layer, up_kwargs):
         super(localUp, self).__init__()
-        self.connect = nn.Sequential(nn.Conv2d(in_channels, out_channels, 3, padding=1, dilation=1, bias=False),
+        self.connect = nn.Sequential(nn.Conv2d(in_channels, out_channels, 1, padding=0, dilation=1, bias=False),
                                    norm_layer(out_channels),
                                    nn.ReLU())
 
@@ -145,15 +145,19 @@ class localUp(nn.Module):
         #                             )
         self.refine = nn.Sequential(nn.Conv2d(2*out_channels, out_channels, 3, padding=1, dilation=1, bias=False),
                                    norm_layer(out_channels),
-                                   nn.ReLU(),
+                                   nn.ReLU()
                                     )
-        # self.refine = Bottleneck(inplanes = 2*out_channels, planes=2*out_channels//4, outplanes=out_channels, stride=1, dilation=1, norm_layer=norm_layer)
+        self.att = nn.Sequential(nn.Conv2d(2*out_channels, 1, 1, padding=0, dilation=1, bias=False),
+                                nn.Sigmoid()
+                                    )        
     def forward(self, c1,c2):
         n,c,h,w =c1.size()
         c1 = self.connect(c1) # n, 64, h, w
         c2 = F.interpolate(c2, (h,w), **self._up_kwargs)
-        out = torch.cat([c1,c2], dim=1)
-        out = self.refine(out)
+        cat = torch.cat([c1,c2], dim=1)
+        out = self.refine(cat)
+        att = self.att(cat)
+        out = att*out+(1-att)*c2
         return out
 
 class Bottleneck(nn.Module):
