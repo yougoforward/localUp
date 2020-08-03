@@ -150,7 +150,7 @@ class localUp(nn.Module):
                                    nn.Conv2d(inter_channels, inter_channels, 3, padding=1, dilation=1, bias=False),
                                    norm_layer(inter_channels),
                                    nn.ReLU(),
-                                   nn.Conv2d(inter_channels, out_channels, 3, padding=1, dilation=1, bias=False),
+                                   nn.Conv2d(inter_channels, out_channels, 1, padding=0, dilation=1, bias=False),
                                    norm_layer(out_channels),
                                     )
 
