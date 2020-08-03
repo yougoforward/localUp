@@ -173,12 +173,9 @@ class Bottleneck(nn.Module):
                                    nn.ReLU(),
                                    )
         self.dconv2 = nn.Sequential(
-                                   nn.Conv2d(inplanes, planes, 3, padding=1, dilation=1, bias=False),
+                                   nn.Conv2d(inplanes, planes, 3, padding=2, dilation=2, bias=False),
                                    norm_layer(planes),
-                                   nn.ReLU(),
-                                   nn.Conv2d(planes, planes, 3, padding=1, dilation=1, bias=False),
-                                   norm_layer(planes),
-                                   nn.ReLU(),
+                                   nn.ReLU()
                                    )  
         self.project = nn.Sequential(nn.Conv2d(3*planes, outplanes, 1, padding=0, dilation=1, bias=False),
                                    norm_layer(outplanes),
