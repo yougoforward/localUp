@@ -146,6 +146,9 @@ class localUp(nn.Module):
         self.refine = nn.Sequential(nn.Conv2d(2*out_channels, out_channels, 3, padding=1, dilation=1, bias=False),
                                    norm_layer(out_channels),
                                     )
+        self.refine2 = nn.Sequential(nn.Conv2d(out_channels, out_channels, 1, padding=0, dilation=1, bias=False),
+                                   norm_layer(out_channels),
+                                    )
         self.relu = nn.ReLU()                           
         # self.refine = Bottleneck(inplanes = 2*out_channels, planes=2*out_channels//4, outplanes=out_channels, stride=1, dilation=1, norm_layer=norm_layer)
     def forward(self, c1,c2):
@@ -154,6 +157,7 @@ class localUp(nn.Module):
         c2 = F.interpolate(c2, (h,w), **self._up_kwargs)
         out = torch.cat([c1,c2], dim=1)
         out = self.refine(out)
+        c2 = self.refine2(c2)
         out = self.relu(c2+out)
         return out
 
