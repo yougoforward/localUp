@@ -62,43 +62,25 @@ class dfpn3_gsfHead(nn.Module):
         self.dconv4_1 = nn.Sequential(nn.Conv2d(in_channels, inter_channels, 1, padding=0, dilation=1, bias=False),
                                    norm_layer(inter_channels),
                                    nn.ReLU(),
-                                   nn.Conv2d(inter_channels, inter_channels, 3, padding=1, dilation=1, bias=False),
-                                   norm_layer(inter_channels),
-                                   nn.ReLU(),
                                    )
-        self.dconv4_8 = nn.Sequential(nn.Conv2d(in_channels, inter_channels, 1, padding=0, dilation=1, bias=False),
-                                   norm_layer(inter_channels),
-                                   nn.ReLU(),
-                                   nn.Conv2d(inter_channels, inter_channels, 3, padding=8, dilation=8, bias=False),
+        self.dconv4_8 = nn.Sequential(nn.Conv2d(in_channels, inter_channels, 3, padding=8, dilation=8, bias=False),
                                    norm_layer(inter_channels),
                                    nn.ReLU(),
                                    )
 
-        self.dconv2_1 = nn.Sequential(nn.Conv2d(2*inter_channels, inter_channels, 1, padding=0, dilation=1, bias=False),
-                                   norm_layer(inter_channels),
-                                   nn.ReLU(),
-                                   nn.Conv2d(inter_channels, inter_channels, 3, padding=1, dilation=1, bias=False),
+        self.dconv2_1 = nn.Sequential(nn.Conv2d(inter_channels, inter_channels, 1, padding=0, dilation=1, bias=False),
                                    norm_layer(inter_channels),
                                    nn.ReLU(),
                                    )
-        self.dconv2_8 = nn.Sequential(nn.Conv2d(2*inter_channels, inter_channels, 1, padding=0, dilation=1, bias=False),
-                                   norm_layer(inter_channels),
-                                   nn.ReLU(),
-                                   nn.Conv2d(inter_channels, inter_channels, 3, padding=8, dilation=8, bias=False),
+        self.dconv2_8 = nn.Sequential(nn.Conv2d(inter_channels, inter_channels, 3, padding=8, dilation=8, bias=False),
                                    norm_layer(inter_channels),
                                    nn.ReLU(),
                                    )
-        self.dconv3_1 = nn.Sequential(nn.Conv2d(2*inter_channels, inter_channels, 1, padding=0, dilation=1, bias=False),
-                                   norm_layer(inter_channels),
-                                   nn.ReLU(),
-                                   nn.Conv2d(inter_channels, inter_channels, 3, padding=1, dilation=1, bias=False),
+        self.dconv3_1 = nn.Sequential(nn.Conv2d(inter_channels, inter_channels, 1, padding=0, dilation=1, bias=False),
                                    norm_layer(inter_channels),
                                    nn.ReLU(),
                                    )
-        self.dconv3_8 = nn.Sequential(nn.Conv2d(2*inter_channels, inter_channels, 1, padding=0, dilation=1, bias=False),
-                                   norm_layer(inter_channels),
-                                   nn.ReLU(),
-                                   nn.Conv2d(inter_channels, inter_channels, 3, padding=8, dilation=8, bias=False),
+        self.dconv3_8 = nn.Sequential(nn.Conv2d(inter_channels, inter_channels, 3, padding=8, dilation=8, bias=False),
                                    norm_layer(inter_channels),
                                    nn.ReLU(),
                                    )
@@ -161,17 +143,24 @@ class localUp(nn.Module):
         #                            norm_layer(out_channels),
         #                            nn.ReLU(),
         #                             )
-        # self.refine = nn.Sequential(nn.Conv2d(2*out_channels, out_channels, 3, padding=1, dilation=1, bias=False),
-        #                            norm_layer(out_channels),
-        #                            nn.ReLU(),
-        #                             )
-        # self.refine = Bottleneck(inplanes = 2*out_channels, planes=2*out_channels//4, outplanes=out_channels, stride=1, dilation=1, norm_layer=norm_layer)
+        self.refine = nn.Sequential(nn.Conv2d(2*out_channels, out_channels, 3, padding=1, dilation=1, bias=False),
+                                   norm_layer(out_channels),
+                                   nn.ReLU()
+                                    )
+        self.att = nn.Sequential(nn.Conv2d(2*out_channels, out_channels//4, 3, padding=1, dilation=1, bias=False),
+                                norm_layer(out_channels//4),
+                                nn.ReLU(),
+                                nn.Conv2d(out_channels//4, 1, 1, padding=0, dilation=1, bias=False),
+                                nn.Sigmoid()
+                                )      
     def forward(self, c1,c2):
         n,c,h,w =c1.size()
         c1 = self.connect(c1) # n, 64, h, w
         c2 = F.interpolate(c2, (h,w), **self._up_kwargs)
-        out = torch.cat([c1,c2], dim=1)
-        # out = self.refine(out)
+        cat = torch.cat([c1,c2], dim=1)
+        out = self.refine(cat)
+        att = self.att(cat)
+        out = att*out+(1-att)*c2
         return out
 
 class Bottleneck(nn.Module):
@@ -249,7 +238,11 @@ class PAM_Module(nn.Module):
         self.key_conv = nn.Conv2d(in_channels=in_dim, out_channels=key_dim, kernel_size=1)
         # self.value_conv = nn.Conv2d(in_channels=value_dim, out_channels=value_dim, kernel_size=1)
         # self.gamma = nn.Parameter(torch.zeros(1))
-        self.gamma = nn.Sequential(nn.Conv2d(in_channels=in_dim, out_channels=1, kernel_size=1, bias=True), nn.Sigmoid())
+        self.gamma = nn.Sequential(nn.Conv2d(in_dim, in_dim//4, 3, padding=1, dilation=1, bias=False),
+                                   norm_layer(in_dim//4),
+                                   nn.ReLU(),
+                                   nn.Conv2d(in_channels=in_dim//4, out_channels=1, kernel_size=1, bias=True), 
+                                   nn.Sigmoid())
 
         self.softmax = nn.Softmax(dim=-1)
         # self.fuse_conv = nn.Sequential(nn.Conv2d(value_dim, out_dim, 1, bias=False),
