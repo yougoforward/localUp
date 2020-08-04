@@ -145,14 +145,14 @@ class localUp(nn.Module):
         #                             )
         self.refine = nn.Sequential(nn.Conv2d(2*out_channels, out_channels, 3, padding=1, dilation=1, bias=False),
                                    norm_layer(out_channels),
-                                   nn.ReLU()
                                     )
         self.att = nn.Sequential(nn.Conv2d(2*out_channels, out_channels//4, 3, padding=1, dilation=1, bias=False),
-                                norm_layer(out_channels//4),
-                                nn.ReLU(),
-                                nn.Conv2d(out_channels//4, 1, 1, padding=0, dilation=1, bias=False),
+                                   norm_layer(out_channels//4),
+                                   nn.ReLU(),
+                                   nn.Conv2d(out_channels//4, 1, 1, padding=0, dilation=1, bias=True),
                                 nn.Sigmoid()
-                                )      
+                                    )  
+        self.relu = nn.ReLU()      
     def forward(self, c1,c2):
         n,c,h,w =c1.size()
         c1 = self.connect(c1) # n, 64, h, w
@@ -160,7 +160,7 @@ class localUp(nn.Module):
         cat = torch.cat([c1,c2], dim=1)
         out = self.refine(cat)
         att = self.att(cat)
-        out = att*out+(1-att)*c2
+        out = self.relu(att*out+(1-att)*c2)
         return out
 
 class Bottleneck(nn.Module):
@@ -238,11 +238,7 @@ class PAM_Module(nn.Module):
         self.key_conv = nn.Conv2d(in_channels=in_dim, out_channels=key_dim, kernel_size=1)
         # self.value_conv = nn.Conv2d(in_channels=value_dim, out_channels=value_dim, kernel_size=1)
         # self.gamma = nn.Parameter(torch.zeros(1))
-        self.gamma = nn.Sequential(nn.Conv2d(in_dim, in_dim//4, 3, padding=1, dilation=1, bias=False),
-                                   norm_layer(in_dim//4),
-                                   nn.ReLU(),
-                                   nn.Conv2d(in_channels=in_dim//4, out_channels=1, kernel_size=1, bias=True), 
-                                   nn.Sigmoid())
+        self.gamma = nn.Sequential(nn.Conv2d(in_channels=in_dim, out_channels=1, kernel_size=1, bias=True), nn.Sigmoid())
 
         self.softmax = nn.Softmax(dim=-1)
         # self.fuse_conv = nn.Sequential(nn.Conv2d(value_dim, out_dim, 1, bias=False),
