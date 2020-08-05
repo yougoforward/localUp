@@ -119,7 +119,7 @@ class dfpn74_gsfHead(nn.Module):
 
         #gp
         gp = self.gap(c4)  
-        out = self.project(torch.cat([p2_1,p2_8,p3_1,p3_8,p4_1,p4_8,gp.expand_as(out)], dim=1))
+        out = self.project(torch.cat([p2_1,p2_8,p3_1,p3_8,p4_1,p4_8,gp.expand_as(out2)], dim=1))
 
       
         # # se
