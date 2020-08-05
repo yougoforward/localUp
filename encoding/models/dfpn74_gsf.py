@@ -171,7 +171,7 @@ def get_dfpn74_gsf(dataset='pascal_voc', backbone='resnet50', pretrained=False,
 
 class PSPModule(nn.Module):
     # (1, 2, 3, 6)
-    def __init__(self, sizes=(1, 3, 6, 8), dimension=2):
+    def __init__(self, sizes=(1,2,3,6), dimension=2):
         super(PSPModule, self).__init__()
         self.stages = nn.ModuleList([self._make_stage(size, dimension) for size in sizes])
         self.pool = nn.MaxPool2d(kernel_size=2)
@@ -194,7 +194,7 @@ class PSPModule(nn.Module):
 class PAM_Module(nn.Module):
     """ Position attention module"""
     #Ref from SAGAN
-    def __init__(self, in_dim, key_dim, value_dim, out_dim, norm_layer, psp_size=(1,3,6,8)):
+    def __init__(self, in_dim, key_dim, value_dim, out_dim, norm_layer, psp_size=(1,2,3,6)):
         super(PAM_Module, self).__init__()
         self.chanel_in = in_dim
         self.psp = PSPModule(psp_size)
