@@ -139,28 +139,21 @@ class localUp(nn.Module):
                                    nn.ReLU())
 
         self._up_kwargs = up_kwargs
-        # self.refine = nn.Sequential(nn.Conv2d(2*out_channels, out_channels, 3, padding=1, dilation=1, bias=False),
-        #                            norm_layer(out_channels),
-        #                            nn.ReLU(),
-        #                             )
-        self.refine = nn.Sequential(nn.Conv2d(2*out_channels, out_channels, 3, padding=1, dilation=1, bias=False),
+        self.refine = nn.Sequential(nn.Conv2d(2*out_channels, out_channels//2, 3, padding=1, dilation=1, bias=False),
+                                   norm_layer(out_channels),
+                                   nn.ReLU(),
+                                   nn.Conv2d(out_channels//2, out_channels, 1, padding=0, dilation=1, bias=False),
                                    norm_layer(out_channels),
                                     )
-        self.att = nn.Sequential(nn.Conv2d(2*out_channels, out_channels//4, 3, padding=1, dilation=1, bias=False),
-                                   norm_layer(out_channels//4),
-                                   nn.ReLU(),
-                                   nn.Conv2d(out_channels//4, 1, 1, padding=0, dilation=1, bias=True),
-                                nn.Sigmoid()
-                                    )  
-        self.relu = nn.ReLU()      
+        self.relu = nn.ReLU()                           
+
     def forward(self, c1,c2):
         n,c,h,w =c1.size()
         c1 = self.connect(c1) # n, 64, h, w
         c2 = F.interpolate(c2, (h,w), **self._up_kwargs)
         cat = torch.cat([c1,c2], dim=1)
         out = self.refine(cat)
-        att = self.att(cat)
-        out = self.relu(att*out+(1-att)*c2)
+        out = self.relu(c2+out)
         return out
 
 class Bottleneck(nn.Module):
