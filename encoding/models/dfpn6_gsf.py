@@ -56,8 +56,8 @@ class dfpn6_gsfHead(nn.Module):
         self.conv6 = nn.Sequential(nn.Dropout2d(0.1), nn.Conv2d(2*inter_channels, out_channels, 1))
 
         # self.localUp2=localUp(256, in_channels, norm_layer, up_kwargs)
-        self.localUp3=localUp(512, 1024, inter_channels, norm_layer, up_kwargs)
-        self.localUp4=localUp(1024, 512, inter_channels, norm_layer, up_kwargs)
+        self.localUp3=localUp(512, inter_channels, norm_layer, up_kwargs)
+        self.localUp4=localUp(1024, inter_channels, norm_layer, up_kwargs)
 
 
         self.dconv2_1 = nn.Sequential(nn.Conv2d(inter_channels, inter_channels, 1, padding=0, dilation=1, bias=False),
@@ -76,11 +76,11 @@ class dfpn6_gsfHead(nn.Module):
                                    norm_layer(inter_channels),
                                    nn.ReLU(),
                                    )
-        self.dconv4_1 = nn.Sequential(nn.Conv2d(in_channels, inter_channels, 1, padding=0, dilation=1, bias=False),
+        self.dconv4_1 = nn.Sequential(nn.Conv2d(inter_channels, inter_channels, 1, padding=0, dilation=1, bias=False),
                                    norm_layer(inter_channels),
                                    nn.ReLU(),
                                    )
-        self.dconv4_8 = nn.Sequential(nn.Conv2d(in_channels, inter_channels, 3, padding=8, dilation=8, bias=False),
+        self.dconv4_8 = nn.Sequential(nn.Conv2d(inter_channels, inter_channels, 3, padding=8, dilation=8, bias=False),
                                    norm_layer(inter_channels),
                                    nn.ReLU(),
                                    )
@@ -91,13 +91,13 @@ class dfpn6_gsfHead(nn.Module):
     def forward(self, c1,c2,c3,c4,c20,c30,c40):
         _,_, h,w = c2.size()
         out4 = self.conv5(c4)
-        cat3, out3 = self.localUp4(c3, out4)
-        cat2, out2 = self.localUp3(c2, cat3)
+        out3 = self.localUp4(c3, out4)
+        out2 = self.localUp3(c2, out3)
         # out = self.localUp2(c1, out)
         
 
-        p4_1 = self.dconv4_1(c4)
-        p4_8 = self.dconv4_8(c4)
+        p4_1 = self.dconv4_1(out4)
+        p4_8 = self.dconv4_8(out4)
         p4_1 = F.interpolate(p4_1, (h,w), **self._up_kwargs)
         p4_8 = F.interpolate(p4_8, (h,w), **self._up_kwargs)
 
@@ -124,18 +124,16 @@ class dfpn6_gsfHead(nn.Module):
         return self.conv6(out)
 
 class localUp(nn.Module):
-    def __init__(self, in_channels1, in_channels2, out_channels, norm_layer, up_kwargs):
+    def __init__(self, in_channels, out_channels, norm_layer, up_kwargs):
         super(localUp, self).__init__()
         self.connect = nn.Sequential(
-                                   nn.Conv2d(in_channels1, out_channels, 1, padding=0, dilation=1, bias=False),
+                                   nn.Conv2d(in_channels, out_channels, 1, padding=0, dilation=1, bias=False),
                                    norm_layer(out_channels),
                                    nn.ReLU())
-
-        # self.connect = Bottleneck(inplanes = in_channels, planes=in_channels//4, outplanes=out_channels, stride=1, dilation=1, norm_layer=norm_layer)
         
         self._up_kwargs = up_kwargs
         self.refine = nn.Sequential(
-                                   nn.Conv2d(in_channels2 + out_channels, out_channels, 3, padding=1, dilation=1, bias=False),
+                                   nn.Conv2d(2*out_channels, out_channels, 3, padding=1, dilation=1, bias=False),
                                    norm_layer(out_channels),
                                    nn.ReLU())
 
@@ -145,45 +143,6 @@ class localUp(nn.Module):
         c2 = F.interpolate(c2, (h,w), **self._up_kwargs)
         cat = torch.cat([c1,c2], dim=1)
         out = self.refine(cat)
-        return cat, out
-class Bottleneck(nn.Module):
-    """ResNet Bottleneck
-    """
-    def __init__(self, inplanes, planes, outplanes, stride=1, dilation=1, norm_layer=None):
-        super(Bottleneck, self).__init__()
-        self.conv1 = nn.Conv2d(inplanes, planes, kernel_size=1, bias=False)
-        self.bn1 = norm_layer(planes)
-        self.conv2 = nn.Conv2d(
-            planes, planes, kernel_size=3, stride=stride,
-            padding=dilation, dilation=dilation, bias=False)
-        self.bn2 = norm_layer(planes)
-        self.conv3 = nn.Conv2d(
-            planes, outplanes, kernel_size=1, bias=False)
-        self.bn3 = norm_layer(outplanes)
-        self.relu = nn.ReLU(inplace=True)
-
-        self.skip = nn.Sequential(
-                nn.Conv2d(inplanes, outplanes,
-                          kernel_size=1, stride=stride, bias=False),
-                norm_layer(outplanes),
-            )
-    def forward(self, x):
-        residual = self.skip(x)
-
-        out = self.conv1(x)
-        out = self.bn1(out)
-        out = self.relu(out)
-
-        out = self.conv2(out)
-        out = self.bn2(out)
-        out = self.relu(out)
-
-        out = self.conv3(out)
-        out = self.bn3(out)
-
-        out += residual
-        out = self.relu(out)
-
         return out
 
 def get_dfpn6_gsf(dataset='pascal_voc', backbone='resnet50', pretrained=False,
