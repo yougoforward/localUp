@@ -84,11 +84,11 @@ class dfpn2_gsfHead(nn.Module):
                                    norm_layer(inter_channels),
                                    nn.ReLU(),
                                    )
-        self.project4 = nn.Sequential(nn.Conv2d(2*inter_channels, inter_channels, 1, padding=0, dilation=1, bias=False),
+        self.project4 = nn.Sequential(nn.Conv2d(inter_channels, inter_channels, 1, padding=0, dilation=1, bias=False),
                                    norm_layer(inter_channels),
                                    nn.ReLU(),
                                    )
-        self.project3 = nn.Sequential(nn.Conv2d(2*inter_channels, inter_channels, 1, padding=0, dilation=1, bias=False),
+        self.project3 = nn.Sequential(nn.Conv2d(inter_channels, inter_channels, 1, padding=0, dilation=1, bias=False),
                                    norm_layer(inter_channels),
                                    nn.ReLU(),
                                    )
@@ -101,14 +101,14 @@ class dfpn2_gsfHead(nn.Module):
         # out4 = self.conv5(c4)
         p4_1 = self.dconv4_1(c4)
         p4_8 = self.dconv4_8(c4)
-        # out4 = self.project4(torch.cat([p4_1,p4_8], dim=1))
-        out4 = p4_1+p4_8
+        out4 = self.project4(p4_1+p4_8)
+        # out4 = p4_1+p4_8
 
         out3 = self.localUp4(c3, out4)
         p3_1 = self.dconv3_1(out3)
         p3_8 = self.dconv3_8(out3)
-        # out3 = self.project3(torch.cat([p3_1,p3_8], dim=1))
-        out3 = p3_1+p3_8
+        out3 = self.project3(p4_1+p4_8)
+        # out3 = p3_1+p3_8
         
         out2 = self.localUp3(c2, out3)
         p2_1 = self.dconv2_1(out2)
@@ -143,15 +143,15 @@ class localUp(nn.Module):
         self._up_kwargs = up_kwargs
         self.refine = nn.Sequential(nn.Conv2d(2*out_channels, out_channels, 3, padding=1, dilation=1, bias=False),
                                    norm_layer(out_channels),
-                                   nn.ReLU(),
                                     )
-
+        self.relu = nn.ReLU()                           
     def forward(self, c1,c2):
         n,c,h,w =c1.size()
         c1 = self.connect(c1) # n, 64, h, w
         c2 = F.interpolate(c2, (h,w), **self._up_kwargs)
         out = torch.cat([c1,c2], dim=1)
         out = self.refine(out)
+        out = self.relu(c2+out)
         return out
 
 class Bottleneck(nn.Module):
