@@ -96,8 +96,7 @@ class SeaSegmentation(BaseDataset):
         img = self.colorjitter(img)
 
         # random rotate
-        img, mask = RandomRotation(img, mask, 45, is_continuous=False)
-        theta =  np.random.randint(0, 8)*45
+        theta =  (np.random.randint(0, 8)-4)*10
         img=img.rotate(theta, Image.BILINEAR, fillcolor=(0,0,0))
         mask=mask.rotate(theta, Image.NEAREST, fillcolor=255)
 
