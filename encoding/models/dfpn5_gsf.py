@@ -150,7 +150,7 @@ class localUp(nn.Module):
         self.att = nn.Sequential(nn.Conv2d(2*out_channels, out_channels//4, 3, padding=1, dilation=1, bias=False),
                                    norm_layer(out_channels//4),
                                    nn.ReLU(),
-                                   nn.Conv2d(out_channels//4, 1, 1, padding=0, dilation=1, bias=True),
+                                   nn.Conv2d(out_channels//4, 1, 1, padding=0, dilation=1, bias=False),
                                 nn.Sigmoid()
                                     )        
     def forward(self, c1,c2):
