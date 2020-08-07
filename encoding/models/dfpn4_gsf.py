@@ -83,14 +83,14 @@ class dfpn4_gsfHead(nn.Module):
                                    nn.ReLU(),
                                    )
 
-        # self.dconv3_1 = nn.Sequential(nn.Conv2d(inter_channels, inter_channels, 1, padding=0, dilation=1, bias=False),
-        #                            norm_layer(inter_channels),
-        #                            nn.ReLU(),
-        #                            )
-        # self.dconv3_8 = nn.Sequential(nn.Conv2d(inter_channels, inter_channels, 3, padding=8, dilation=8, bias=False),
-        #                            norm_layer(inter_channels),
-        #                            nn.ReLU(),
-        #                            )
+        self.dconv3_1 = nn.Sequential(nn.Conv2d(inter_channels, inter_channels, 1, padding=0, dilation=1, bias=False),
+                                   norm_layer(inter_channels),
+                                   nn.ReLU(),
+                                   )
+        self.dconv2_1 = nn.Sequential(nn.Conv2d(inter_channels, inter_channels, 1, padding=0, dilation=1, bias=False),
+                                   norm_layer(inter_channels),
+                                   nn.ReLU(),
+                                   )
         self.project4 = nn.Sequential(nn.Conv2d(4*inter_channels, inter_channels, 1, padding=0, dilation=1, bias=False),
                                    norm_layer(inter_channels),
                                    nn.ReLU(),
@@ -128,7 +128,7 @@ class dfpn4_gsfHead(nn.Module):
         out3 = F.interpolate(out3, (h,w), **self._up_kwargs)
         out4 = F.interpolate(out4, (h,w), **self._up_kwargs)
 
-        out = self.project(torch.cat([out2,out3,out4], dim=1))
+        out = self.project(torch.cat([self.dconv2_1(out2),self.dconv3_1(out3),out4], dim=1))
 
         #gp
         gp = self.gap(c4)        
