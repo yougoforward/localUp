@@ -52,8 +52,7 @@ class dfpn2_gsfHead(nn.Module):
                             nn.Conv2d(inter_channels, inter_channels, 1, bias=True),
                             nn.Sigmoid())
         self.gff = PAM_Module(in_dim=inter_channels, key_dim=inter_channels//8,value_dim=inter_channels,out_dim=inter_channels,norm_layer=norm_layer)
-        self.gff4 = PAM_Module(in_dim=inter_channels, key_dim=inter_channels//8,value_dim=inter_channels,out_dim=inter_channels,norm_layer=norm_layer)
-        self.gff3 = PAM_Module(in_dim=inter_channels, key_dim=inter_channels//8,value_dim=inter_channels,out_dim=inter_channels,norm_layer=norm_layer)
+
         self.conv6 = nn.Sequential(nn.Dropout2d(0.1), nn.Conv2d(2*inter_channels, out_channels, 1))
 
         # self.localUp2=localUp(256, in_channels, norm_layer, up_kwargs)
@@ -64,7 +63,7 @@ class dfpn2_gsfHead(nn.Module):
                                    norm_layer(inter_channels),
                                    nn.ReLU(),
                                    )
-        self.dconv4_8 = nn.Sequential(nn.Conv2d(in_channels, inter_channels, 3, padding=8, dilation=8, bias=False),
+        self.dconv4_8 = nn.Sequential(nn.Conv2d(in_channels, inter_channels, 3, padding=2, dilation=2, bias=False),
                                    norm_layer(inter_channels),
                                    nn.ReLU(),
                                    )
@@ -73,7 +72,7 @@ class dfpn2_gsfHead(nn.Module):
                                    norm_layer(inter_channels),
                                    nn.ReLU(),
                                    )
-        self.dconv2_8 = nn.Sequential(nn.Conv2d(inter_channels, inter_channels, 3, padding=8, dilation=8, bias=False),
+        self.dconv2_8 = nn.Sequential(nn.Conv2d(inter_channels, inter_channels, 3, padding=2, dilation=2, bias=False),
                                    norm_layer(inter_channels),
                                    nn.ReLU(),
                                    )
@@ -81,7 +80,7 @@ class dfpn2_gsfHead(nn.Module):
                                    norm_layer(inter_channels),
                                    nn.ReLU(),
                                    )
-        self.dconv3_8 = nn.Sequential(nn.Conv2d(inter_channels, inter_channels, 3, padding=8, dilation=8, bias=False),
+        self.dconv3_8 = nn.Sequential(nn.Conv2d(inter_channels, inter_channels, 3, padding=2, dilation=2, bias=False),
                                    norm_layer(inter_channels),
                                    nn.ReLU(),
                                    )
@@ -93,38 +92,34 @@ class dfpn2_gsfHead(nn.Module):
                                    norm_layer(inter_channels),
                                    nn.ReLU(),
                                    )
-        self.project = nn.Sequential(nn.Conv2d(3*inter_channels, inter_channels, 1, padding=0, dilation=1, bias=False),
+        self.project = nn.Sequential(nn.Conv2d(6*inter_channels, inter_channels, 1, padding=0, dilation=1, bias=False),
                                    norm_layer(inter_channels),
                                    nn.ReLU(),
                                    )
     def forward(self, c1,c2,c3,c4,c20,c30,c40):
         _,_, h,w = c2.size()
-        out4 = self.conv5(c4)
-        out4 = self.gff4(out4)
-        # p4_1 = self.dconv4_1(c4)
-        # p4_8 = self.dconv4_8(c4)
-        # out4 = self.project4(torch.cat([p4_1,p4_8], dim=1))
+        # out4 = self.conv5(c4)
+        p4_1 = self.dconv4_1(c4)
+        p4_8 = self.dconv4_8(c4)
+        out4 = self.project4(torch.cat([p4_1,p4_8], dim=1))
 
         out3 = self.localUp4(c3, out4)
-        out3 = self.gff3(out3)
-
-        # p3_1 = self.dconv3_1(out3)
-        # p3_8 = self.dconv3_8(out3)
-        # out3 = self.project3(torch.cat([p3_1,p3_8], dim=1))
+        p3_1 = self.dconv3_1(out3)
+        p3_8 = self.dconv3_8(out3)
+        out3 = self.project3(torch.cat([p3_1,p3_8], dim=1))
 
         out2 = self.localUp3(c2, out3)
+        p2_1 = self.dconv2_1(out2)
+        p2_8 = self.dconv2_8(out2)
+        # out2 = self.project3(torch.cat([p2_1,p2_8], dim=1))
 
-        # p2_1 = self.dconv2_1(out2)
-        # p2_8 = self.dconv2_8(out2)
         # out = self.localUp2(c1, out)
-        # p4_1 = F.interpolate(p4_1, (h,w), **self._up_kwargs)
-        # p4_8 = F.interpolate(p4_8, (h,w), **self._up_kwargs)
-        # p3_1 = F.interpolate(p3_1, (h,w), **self._up_kwargs)
-        # p3_8 = F.interpolate(p3_8, (h,w), **self._up_kwargs)
-        # out = self.project(torch.cat([p2_1,p2_8,p3_1,p3_8,p4_1,p4_8], dim=1))
-        out4 = F.interpolate(out4, (h,w), **self._up_kwargs)
-        out3 = F.interpolate(out3, (h,w), **self._up_kwargs)
-        out = self.project(torch.cat([out2,out3,out4], dim=1))
+        p4_1 = F.interpolate(p4_1, (h,w), **self._up_kwargs)
+        p4_8 = F.interpolate(p4_8, (h,w), **self._up_kwargs)
+        p3_1 = F.interpolate(p3_1, (h,w), **self._up_kwargs)
+        p3_8 = F.interpolate(p3_8, (h,w), **self._up_kwargs)
+        out = self.project(torch.cat([p2_1,p2_8,p3_1,p3_8,p4_1,p4_8], dim=1))
+
         #gp
         gp = self.gap(c4)        
         # se
