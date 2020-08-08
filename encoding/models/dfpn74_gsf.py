@@ -145,9 +145,6 @@ class localUp(nn.Module):
                                    nn.Conv2d(256, 256, 3, padding=1, dilation=1, bias=False),
                                    norm_layer(256),
                                    nn.ReLU(),
-                                   nn.Conv2d(256, 256, 3, padding=1, dilation=1, bias=False),
-                                   norm_layer(256),
-                                   nn.ReLU(),
                                    nn.Conv2d(256, out_channels, 1, padding=0, dilation=1, bias=False),
                                    norm_layer(out_channels),
                                     )
