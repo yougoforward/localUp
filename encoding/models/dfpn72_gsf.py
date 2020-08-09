@@ -143,7 +143,7 @@ class localUp(nn.Module):
         #                            norm_layer(out_channels),
         #                            nn.ReLU(),
         #                             )
-        self.refine = nn.Sequential(nn.Conv2d(2*out_channels, out_channels, 3, padding=1, dilation=1, bias=False),
+        self.refine = nn.Sequential(nn.Conv2d(out_channels, out_channels, 3, padding=1, dilation=1, bias=False),
                                    norm_layer(out_channels),
                                    nn.ReLU()
                                     )
@@ -155,9 +155,10 @@ class localUp(nn.Module):
         c1 = self.connect(c1) # n, 64, h, w
         c2 = F.interpolate(c2, (h,w), **self._up_kwargs)
         cat = torch.cat([c1,c2], dim=1)
-        out = self.refine(cat)
+        # out = self.refine(cat)
         att = self.att(cat)
-        out = att*out+(1-att)*c2
+        out = att*c1+c2
+        out = self.refine(out)
         return out
 
 class Bottleneck(nn.Module):
