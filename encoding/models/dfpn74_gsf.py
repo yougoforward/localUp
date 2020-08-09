@@ -121,8 +121,8 @@ class dfpn74_gsfHead(nn.Module):
         #gp
         gp = self.gap(c4)        
         # se
-        se = self.se(gp)
-        out = out + se*out
+        # se = self.se(gp)
+        # out = out + se*out
 
         #non-local
         out = self.gff(out)
@@ -139,27 +139,17 @@ class localUp(nn.Module):
                                    nn.ReLU())
 
         self._up_kwargs = up_kwargs
-        # self.refine = nn.Sequential(nn.Conv2d(2*out_channels, out_channels, 3, padding=1, dilation=1, bias=False),
-        #                            norm_layer(out_channels),
-        #                            nn.ReLU(),
-        #                             )
         self.refine = nn.Sequential(nn.Conv2d(2*out_channels, out_channels, 3, padding=1, dilation=1, bias=False),
                                    norm_layer(out_channels),
+                                   nn.ReLU(),
                                     )
-        self.relu = nn.ReLU()
-        self.refine2 = nn.Sequential(nn.Conv2d(out_channels, out_channels, 3, padding=1, dilation=1, bias=False),
-                                   norm_layer(out_channels), nn.ReLU()
-                                    )                           
-        # self.refine = Bottleneck(inplanes = 2*out_channels, planes=2*out_channels//4, outplanes=out_channels, stride=1, dilation=1, norm_layer=norm_layer)
+
     def forward(self, c1,c2):
         n,c,h,w =c1.size()
         c1 = self.connect(c1) # n, 64, h, w
         c2 = F.interpolate(c2, (h,w), **self._up_kwargs)
         out = torch.cat([c1,c2], dim=1)
         out = self.refine(out)
-        out = self.relu(c2+out)
-        out = self.refine2(out)
-
         return out
 
 class Bottleneck(nn.Module):
