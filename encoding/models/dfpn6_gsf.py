@@ -150,6 +150,7 @@ class localUp(nn.Module):
                                    norm_layer(out_channels),
                                    nn.ReLU(),
                                     )
+        self.out_chs = out_channels
 
     def forward(self, c1,c2):
         n,c,h,w =c1.size()
@@ -157,10 +158,10 @@ class localUp(nn.Module):
         c2 = F.interpolate(c2, (h,w), **self._up_kwargs)
         #
         unfold_c13 = F.unfold(c1, kernel_size=3, padding=1)
-        c1_w3 = torch.matmul(unfold_c13.view(n, c, 3*3, h*w).permute(0,1,3,2), self.w3)
+        c1_w3 = torch.matmul(unfold_c13.view(n, self.out_chs, 3*3, h*w).permute(0,1,3,2), self.w3)
         # unfold_c15 = F.unfold(c1, kernel_size=5, padding=2)
         # c1_w5 = torch.matmul(unfold_c15.view(n, c, 5*5, h*w).permute(0,1,3,2), self.w5)
-        c1 = c1_w3.view(n,c,h,w)
+        c1 = c1_w3.view(n,self.out_chs,h,w)
         # c1 = (c1_w3+c1_w5).view(n,c,h,w)
 
         out = torch.cat([c1,c2], dim=1)
