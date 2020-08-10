@@ -140,10 +140,10 @@ class localUp(nn.Module):
 
         self._up_kwargs = up_kwargs
 
-        self.w3 = nn.Parameters(torch.empty(3*3))
+        self.w3 = nn.Parameter(torch.empty(3*3))
         nn.init.xavier_normal_(self.w3)
 
-        self.w5 = nn.Parameters(torch.empty(5*5))
+        self.w5 = nn.Parameter(torch.empty(5*5))
         nn.init.xavier_normal_(self.w5)
 
         self.refine = nn.Sequential(nn.Conv2d(2*out_channels, out_channels, 1, padding=0, dilation=1, bias=False),
