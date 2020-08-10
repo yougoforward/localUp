@@ -21,13 +21,11 @@ class dfpn3_gsf(BaseNet):
     def forward(self, x):
         imsize = x.size()[2:]
         c1, c2, c3, c4, c20, c30, c40 = self.base_forward(x)
-        if self.aux:
-            auxout = self.auxlayer(c3)
-        x = self.head(c1,c2,c3,c4,c20,c30,c40, auxout)
+        x = self.head(c1,c2,c3,c4,c20,c30,c40)
         x = F.interpolate(x, imsize, **self._up_kwargs)
         outputs = [x]
         if self.aux:
-            # auxout = self.auxlayer(c3)
+            auxout = self.auxlayer(c3)
             auxout = F.interpolate(auxout, imsize, **self._up_kwargs)
             outputs.append(auxout)
         return tuple(outputs)
@@ -98,7 +96,13 @@ class dfpn3_gsfHead(nn.Module):
                                    norm_layer(inter_channels),
                                    nn.ReLU(),
                                    )
-    def forward(self, c1,c2,c3,c4,c20,c30,c40, coarse):
+        self.scale_att = nn.Sequential(nn.Conv2d(6*inter_channels, inter_channels, 1, padding=0, dilation=1, bias=False),
+                                   norm_layer(inter_channels),
+                                   nn.ReLU(),
+                                   nn.Conv2d(inter_channels, 6, 1, padding=0, dilation=1, bias=False),
+                                   nn.Sigmoid()
+                                   )
+    def forward(self, c1,c2,c3,c4,c20,c30,c40):
         _,_, h,w = c2.size()
         # out4 = self.conv5(c4)
         p4_1 = self.dconv4_1(c4)
@@ -118,16 +122,18 @@ class dfpn3_gsfHead(nn.Module):
         p4_8 = F.interpolate(p4_8, (h,w), **self._up_kwargs)
         p3_1 = F.interpolate(p3_1, (h,w), **self._up_kwargs)
         p3_8 = F.interpolate(p3_8, (h,w), **self._up_kwargs)
-        out = self.project(torch.cat([p2_1,p2_8,p3_1,p3_8,p4_1,p4_8], dim=1))
-
+        cp = [p2_1,p2_8,p3_1,p3_8,p4_1,p4_8]
+        cat = torch.cat(cp, dim=1)
+        s_att_list = torch.split(self.scale_att(cat),1, dim=1)
+        out = self.project(torch.cat([cp[i]*s_att_list[i] for i in range(len(cp))], dim=1))
         #gp
         gp = self.gap(c4)        
         # se
         se = self.se(gp)
         out = out + se*out
-        coarse =  F.interpolate(coarse, (h,w), **self._up_kwargs)
+
         #non-local
-        out = self.gff(out, coarse)
+        out = self.gff(out)
 
         out = torch.cat([out, gp.expand_as(out)], dim=1)
 
@@ -141,22 +147,17 @@ class localUp(nn.Module):
                                    nn.ReLU())
 
         self._up_kwargs = up_kwargs
-        # self.refine = nn.Sequential(nn.Conv2d(2*out_channels, out_channels, 3, padding=1, dilation=1, bias=False),
-        #                            norm_layer(out_channels),
-        #                            nn.ReLU(),
-        #                             )
         self.refine = nn.Sequential(nn.Conv2d(2*out_channels, out_channels, 3, padding=1, dilation=1, bias=False),
                                    norm_layer(out_channels),
+                                   nn.ReLU(),
                                     )
-        self.relu = nn.ReLU()                           
-        # self.refine = Bottleneck(inplanes = 2*out_channels, planes=2*out_channels//4, outplanes=out_channels, stride=1, dilation=1, norm_layer=norm_layer)
+
     def forward(self, c1,c2):
         n,c,h,w =c1.size()
         c1 = self.connect(c1) # n, 64, h, w
         c2 = F.interpolate(c2, (h,w), **self._up_kwargs)
         out = torch.cat([c1,c2], dim=1)
         out = self.refine(out)
-        out = self.relu(c2+out)
         return out
 
 class Bottleneck(nn.Module):
@@ -228,14 +229,20 @@ class PAM_Module(nn.Module):
         super(PAM_Module, self).__init__()
         self.chanel_in = in_dim
         self.pool = nn.MaxPool2d(kernel_size=2)
+        # self.pool = nn.AvgPool2d(kernel_size=2)
 
         self.query_conv = nn.Conv2d(in_channels=in_dim, out_channels=key_dim, kernel_size=1)
-        self.key_conv = nn.Conv1d(in_channels=in_dim, out_channels=key_dim, kernel_size=1)
+        self.key_conv = nn.Conv2d(in_channels=in_dim, out_channels=key_dim, kernel_size=1)
+        # self.value_conv = nn.Conv2d(in_channels=value_dim, out_channels=value_dim, kernel_size=1)
+        # self.gamma = nn.Parameter(torch.zeros(1))
         self.gamma = nn.Sequential(nn.Conv2d(in_channels=in_dim, out_channels=1, kernel_size=1, bias=True), nn.Sigmoid())
 
         self.softmax = nn.Softmax(dim=-1)
+        # self.fuse_conv = nn.Sequential(nn.Conv2d(value_dim, out_dim, 1, bias=False),
+        #                                norm_layer(out_dim),
+        #                                nn.ReLU(True))
 
-    def forward(self, x, coarse):
+    def forward(self, x):
         """
             inputs :
                 x : input feature maps( B X C X H X W)
@@ -243,24 +250,22 @@ class PAM_Module(nn.Module):
                 out : attention value + input feature
                 attention: B X (HxW) X (HxW)
         """
-        m_batchsize, C, height, width = x.size()
-        n,ncl,h,w=coarse.size()
-        coarse_att = F.softmax(coarse, dim=1).view(n,ncl,-1).permute(0,2,1)
-        cls_center = torch.bmm(x.view(n, C ,-1),coarse_att)
-        cls_center = cls_center/torch.sum(coarse_att, dim=1, keepdim=True).expand_as(cls_center)
-
         xp = self.pool(x)
+        m_batchsize, C, height, width = x.size()
         m_batchsize, C, hp, wp = xp.size()
         proj_query = self.query_conv(x).view(m_batchsize, -1, width*height).permute(0, 2, 1)
-        proj_value = torch.cat([cls_center, xp.view(n, C ,-1)], dim=-1)
-        proj_key = self.key_conv(proj_value).view(m_batchsize, -1, wp*hp+ncl)
+        proj_key = self.key_conv(xp).view(m_batchsize, -1, wp*hp)
         energy = torch.bmm(proj_query, proj_key)
         attention = self.softmax(energy)
+        # proj_value = self.value_conv(x).view(m_batchsize, -1, width*height)
+        proj_value = xp.view(m_batchsize, -1, wp*hp)
         
         out = torch.bmm(proj_value, attention.permute(0, 2, 1))
         out = out.view(m_batchsize, C, height, width)
+        # out = F.interpolate(out, (height, width), mode="bilinear", align_corners=True)
 
         gamma = self.gamma(x)
         out = (1-gamma)*out + gamma*x
+        # out = self.fuse_conv(out)
         return out
 
