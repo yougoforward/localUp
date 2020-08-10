@@ -335,3 +335,40 @@ class PAM_Module(nn.Module):
 #         out = (1-gamma)*out + gamma*x
 #         return out
 
+class CLF_Module(nn.Module):
+    """ Position attention module"""
+    #Ref from SAGAN
+    def __init__(self, in_dim, key_dim, value_dim, out_dim, norm_layer, up_kwargs):
+        super(CLF_Module, self).__init__()
+
+        self.query_conv = nn.Conv2d(in_channels=in_dim, out_channels=key_dim, kernel_size=1)
+        self.key_conv = nn.Conv1d(in_channels=in_dim, out_channels=key_dim, kernel_size=1)
+        self.value_conv = nn.Conv1d(in_channels=in_dim, out_channels=value_dim, kernel_size=1)
+
+        self._up_kwargs = up_kwargs
+
+    def forward(self, x, coarse):
+        """
+            inputs :
+                x : input feature maps( B X C X H X W)
+            returns :
+                out : attention value + input feature
+                attention: B X (HxW) X (HxW)
+        """
+        n,c,h,w = x.size()
+        ncls = coarse.size()[1]
+        coarse = F.interpolate(coarse, (h,w), **self._up_kwargs)
+        coarse = coarse.view(n, ncls, -1).permute(0,2,1)
+        coarse_norm = F.softmax(coarse, dim=1)
+        class_feat = torch.matmul(x.view(n,c,-1), coarse_norm) # n x c x ncls
+
+
+        proj_query = self.query_conv(x).view(n, -1, h*w).permute(0, 2, 1)
+        proj_key = self.key_conv(class_feat)
+        energy = torch.bmm(proj_query, proj_key)
+        attention = self.softmax(energy)
+        proj_value = self.value_conv(x).view(n, -1, h*w)
+        
+        out = torch.bmm(proj_value, attention.permute(0, 2, 1))
+        out = out.view(n, c, h, w)
+        return out

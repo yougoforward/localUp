@@ -54,8 +54,9 @@ class dfpn74_gsfHead(nn.Module):
                             nn.Conv2d(inter_channels, inter_channels, 1, bias=True),
                             nn.Sigmoid())
         self.gff = PAM_Module(in_dim=inter_channels, key_dim=inter_channels//8,value_dim=inter_channels,out_dim=inter_channels,norm_layer=norm_layer)
+        self.clf = CLF_Module(in_dim=inter_channels, key_dim=inter_channels//8,value_dim=inter_channels,out_dim=inter_channels,norm_layer=norm_layer, up_kwargs=up_kwargs)
 
-        self.conv6 = nn.Sequential(nn.Dropout2d(0.1), nn.Conv2d(2*inter_channels, out_channels, 1))
+        self.conv6 = nn.Sequential(nn.Dropout2d(0.1), nn.Conv2d(3*inter_channels, out_channels, 1))
 
         # self.localUp2=localUp(256, in_channels, norm_layer, up_kwargs)
         self.localUp3=localUp(512, inter_channels, norm_layer, up_kwargs)
@@ -130,8 +131,8 @@ class dfpn74_gsfHead(nn.Module):
         out = self.gff(out)
         
         #class level 
-
-        out = torch.cat([out, gp.expand_as(out)], dim=1)
+        class_feat = self.clf(out, coarse) 
+        out = torch.cat([out, class_feat, gp.expand_as(out)], dim=1)
 
         return self.conv6(out)
 
@@ -220,20 +221,11 @@ class CLF_Module(nn.Module):
     #Ref from SAGAN
     def __init__(self, in_dim, key_dim, value_dim, out_dim, norm_layer, up_kwargs):
         super(CLF_Module, self).__init__()
-        self.chanel_in = in_dim
-        self.pool = nn.MaxPool2d(kernel_size=2)
-        # self.pool = nn.AvgPool2d(kernel_size=2)
 
         self.query_conv = nn.Conv2d(in_channels=in_dim, out_channels=key_dim, kernel_size=1)
-        self.key_conv = nn.Conv2d(in_channels=in_dim, out_channels=key_dim, kernel_size=1)
-        # self.value_conv = nn.Conv2d(in_channels=value_dim, out_channels=value_dim, kernel_size=1)
-        # self.gamma = nn.Parameter(torch.zeros(1))
-        self.gamma = nn.Sequential(nn.Conv2d(in_channels=in_dim, out_channels=1, kernel_size=1, bias=True), nn.Sigmoid())
+        self.key_conv = nn.Conv1d(in_channels=in_dim, out_channels=key_dim, kernel_size=1)
+        self.value_conv = nn.Conv1d(in_channels=in_dim, out_channels=value_dim, kernel_size=1)
 
-        self.softmax = nn.Softmax(dim=-1)
-        # self.fuse_conv = nn.Sequential(nn.Conv2d(value_dim, out_dim, 1, bias=False),
-        #                                norm_layer(out_dim),
-        #                                nn.ReLU(True))
         self._up_kwargs = up_kwargs
 
     def forward(self, x, coarse):
@@ -251,23 +243,13 @@ class CLF_Module(nn.Module):
         coarse_norm = F.softmax(coarse, dim=1)
         class_feat = torch.matmul(x.view(n,c,-1), coarse_norm) # n x c x ncls
 
-        
 
-        xp = self.pool(x)
-        m_batchsize, C, height, width = x.size()
-        m_batchsize, C, hp, wp = xp.size()
-        proj_query = self.query_conv(x).view(m_batchsize, -1, width*height).permute(0, 2, 1)
-        proj_key = self.key_conv(xp).view(m_batchsize, -1, wp*hp)
+        proj_query = self.query_conv(x).view(n, -1, h*w).permute(0, 2, 1)
+        proj_key = self.key_conv(class_feat)
         energy = torch.bmm(proj_query, proj_key)
         attention = self.softmax(energy)
-        # proj_value = self.value_conv(x).view(m_batchsize, -1, width*height)
-        proj_value = xp.view(m_batchsize, -1, wp*hp)
+        proj_value = self.value_conv(x).view(n, -1, h*w)
         
         out = torch.bmm(proj_value, attention.permute(0, 2, 1))
-        out = out.view(m_batchsize, C, height, width)
-        # out = F.interpolate(out, (height, width), mode="bilinear", align_corners=True)
-
-        gamma = self.gamma(x)
-        out = (1-gamma)*out + gamma*x
-        # out = self.fuse_conv(out)
+        out = out.view(n, c, h, w)
         return out
