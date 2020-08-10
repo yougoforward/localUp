@@ -63,7 +63,7 @@ class dfpn2_gsfHead(nn.Module):
                                    norm_layer(inter_channels),
                                    nn.ReLU(),
                                    )
-        self.dconv4_8 = nn.Sequential(nn.Conv2d(in_channels, inter_channels, 3, padding=2, dilation=2, bias=False),
+        self.dconv4_8 = nn.Sequential(nn.Conv2d(in_channels, inter_channels, 3, padding=8, dilation=8, bias=False),
                                    norm_layer(inter_channels),
                                    nn.ReLU(),
                                    )
@@ -72,7 +72,7 @@ class dfpn2_gsfHead(nn.Module):
                                    norm_layer(inter_channels),
                                    nn.ReLU(),
                                    )
-        self.dconv2_8 = nn.Sequential(nn.Conv2d(inter_channels, inter_channels, 3, padding=2, dilation=2, bias=False),
+        self.dconv2_8 = nn.Sequential(nn.Conv2d(inter_channels, inter_channels, 3, padding=8, dilation=8, bias=False),
                                    norm_layer(inter_channels),
                                    nn.ReLU(),
                                    )
@@ -80,7 +80,7 @@ class dfpn2_gsfHead(nn.Module):
                                    norm_layer(inter_channels),
                                    nn.ReLU(),
                                    )
-        self.dconv3_8 = nn.Sequential(nn.Conv2d(inter_channels, inter_channels, 3, padding=2, dilation=2, bias=False),
+        self.dconv3_8 = nn.Sequential(nn.Conv2d(inter_channels, inter_channels, 3, padding=8, dilation=8, bias=False),
                                    norm_layer(inter_channels),
                                    nn.ReLU(),
                                    )
@@ -111,8 +111,6 @@ class dfpn2_gsfHead(nn.Module):
         out2 = self.localUp3(c2, out3)
         p2_1 = self.dconv2_1(out2)
         p2_8 = self.dconv2_8(out2)
-        # out2 = self.project3(torch.cat([p2_1,p2_8], dim=1))
-
         # out = self.localUp2(c1, out)
         p4_1 = F.interpolate(p4_1, (h,w), **self._up_kwargs)
         p4_8 = F.interpolate(p4_8, (h,w), **self._up_kwargs)
@@ -147,16 +145,19 @@ class localUp(nn.Module):
         #                             )
         self.refine = nn.Sequential(nn.Conv2d(2*out_channels, out_channels, 3, padding=1, dilation=1, bias=False),
                                    norm_layer(out_channels),
+                                   nn.ReLU()
                                     )
-        self.relu = nn.ReLU()                           
-        # self.refine = Bottleneck(inplanes = 2*out_channels, planes=2*out_channels//4, outplanes=out_channels, stride=1, dilation=1, norm_layer=norm_layer)
+        self.att = nn.Sequential(nn.Conv2d(2*out_channels, 1, 1, padding=0, dilation=1, bias=False),
+                                nn.Sigmoid()
+                                    )        
     def forward(self, c1,c2):
         n,c,h,w =c1.size()
         c1 = self.connect(c1) # n, 64, h, w
         c2 = F.interpolate(c2, (h,w), **self._up_kwargs)
-        out = torch.cat([c1,c2], dim=1)
-        out = self.refine(out)
-        out = self.relu(c2+out)
+        cat = torch.cat([c1,c2], dim=1)
+        out = self.refine(cat)
+        att = self.att(cat)
+        out = att*out+c2
         return out
 
 class Bottleneck(nn.Module):
