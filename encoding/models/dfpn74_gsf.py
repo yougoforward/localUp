@@ -249,7 +249,7 @@ class CLF_Module(nn.Module):
         proj_key = self.key_conv(class_feat)
         energy = torch.bmm(proj_query, proj_key)
         attention = self.softmax(energy)
-        proj_value = self.value_conv(x).view(n, -1, h*w)
+        proj_value = self.value_conv(class_feat).view(n, -1, h*w)
         
         out = torch.bmm(proj_value, attention.permute(0, 2, 1))
         out = out.view(n, c, h, w)
