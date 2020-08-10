@@ -225,6 +225,7 @@ class CLF_Module(nn.Module):
         self.query_conv = nn.Conv2d(in_channels=in_dim, out_channels=key_dim, kernel_size=1)
         self.key_conv = nn.Conv1d(in_channels=in_dim, out_channels=key_dim, kernel_size=1)
         self.value_conv = nn.Conv1d(in_channels=in_dim, out_channels=value_dim, kernel_size=1)
+        self.softmax = nn.Softmax(dim=-1)
 
         self._up_kwargs = up_kwargs
 
