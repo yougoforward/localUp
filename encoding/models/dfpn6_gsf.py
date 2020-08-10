@@ -141,9 +141,9 @@ class localUp(nn.Module):
         self._up_kwargs = up_kwargs
 
         self.w31 = nn.Parameter(torch.empty(3*3))
-        nn.init.normal_(self.w3)
+        nn.init.normal_(self.w31)
         self.w32 = nn.Parameter(torch.empty(3*3))
-        nn.init.normal_(self.w3)
+        nn.init.normal_(self.w32)
         self.w5 = nn.Parameter(torch.empty(5*5))
         nn.init.normal_(self.w5)
         self.bn_relu1 = nn.Sequential(norm_layer(out_channels),
