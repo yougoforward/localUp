@@ -239,7 +239,7 @@ class CLF_Module(nn.Module):
         """
         n,c,h,w = x.size()
         ncls = coarse.size()[1]
-        coarse = F.interpolate(coarse, (h,w), **self._up_kwargs)
+        coarse = F.interpolate(coarse.detach(), (h,w), **self._up_kwargs)
         coarse = coarse.view(n, ncls, -1).permute(0,2,1)
         coarse_norm = F.softmax(coarse, dim=1)
         class_feat = torch.matmul(x.view(n,c,-1), coarse_norm) # n x c x ncls
