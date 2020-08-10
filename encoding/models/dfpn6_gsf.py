@@ -169,10 +169,10 @@ class localUp(nn.Module):
         # c1 = (c1_w3+c1_w5).view(n,c,h,w)
         c1 = self.bn_relu1(c1)
 
-        unfold_c23 = F.unfold(c2, kernel_size=3, padding=1)
-        c2_w3 = torch.matmul(unfold_c23.view(n, self.out_chs, 3*3, h*w).permute(0,1,3,2), self.w32)
-        c2 = c2_w3.view(n,self.out_chs,h,w)
-        c2 = self.bn_relu2(c2)
+        # unfold_c23 = F.unfold(c2, kernel_size=3, padding=1)
+        # c2_w3 = torch.matmul(unfold_c23.view(n, self.out_chs, 3*3, h*w).permute(0,1,3,2), self.w32)
+        # c2 = c2_w3.view(n,self.out_chs,h,w)
+        # c2 = self.bn_relu2(c2)
 
 
         out = torch.cat([c1,c2], dim=1)
