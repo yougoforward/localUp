@@ -224,7 +224,7 @@ class CLF_Module(nn.Module):
 
         self.query_conv = nn.Conv2d(in_channels=in_dim, out_channels=key_dim, kernel_size=1)
         self.key_conv = nn.Conv1d(in_channels=in_dim, out_channels=key_dim, kernel_size=1)
-        self.value_conv = nn.Conv1d(in_channels=in_dim, out_channels=value_dim, kernel_size=1)
+        # self.value_conv = nn.Conv1d(in_channels=in_dim, out_channels=value_dim, kernel_size=1)
         self.softmax = nn.Softmax(dim=-1)
 
         self._up_kwargs = up_kwargs
@@ -239,7 +239,7 @@ class CLF_Module(nn.Module):
         """
         n,c,h,w = x.size()
         ncls = coarse.size()[1]
-        coarse = F.interpolate(coarse.detach(), (h,w), **self._up_kwargs)
+        coarse = F.interpolate(coarse, (h,w), **self._up_kwargs)
         coarse = coarse.view(n, ncls, -1).permute(0,2,1)
         coarse_norm = F.softmax(coarse, dim=1)
         class_feat = torch.matmul(x.view(n,c,-1), coarse_norm) # n x c x ncls
@@ -249,8 +249,8 @@ class CLF_Module(nn.Module):
         proj_key = self.key_conv(class_feat)
         energy = torch.bmm(proj_query, proj_key)
         attention = self.softmax(energy)
-        proj_value = self.value_conv(class_feat)
-        
+        # proj_value = self.value_conv(class_feat)
+        proj_value = class_feat
         out = torch.bmm(proj_value, attention.permute(0, 2, 1))
         out = out.view(n, c, h, w)
         return out
