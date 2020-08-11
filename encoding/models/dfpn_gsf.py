@@ -177,7 +177,7 @@ class Bottleneck(nn.Module):
                                    norm_layer(planes),
                                    nn.ReLU()
                                    )
-        self.dconv3 = nn.Sequential(nn.Conv2d(planes, planes, 3, padding=4, dilation=4, stride=stride, bias=False),
+        self.dconv3 = nn.Sequential(nn.Conv2d(planes, planes, 3, padding=3, dilation=3, stride=stride, bias=False),
                                    norm_layer(planes),
                                    nn.ReLU()
                                    )

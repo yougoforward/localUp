@@ -177,7 +177,7 @@ class Bottleneck(nn.Module):
                                    norm_layer(planes),
                                    nn.ReLU()
                                    )
-        self.dconv3 = nn.Sequential(nn.Conv2d(planes, planes, 3, padding=4, dilation=4, stride=stride, bias=False),
+        self.dconv3 = nn.Sequential(nn.Conv2d(planes, planes, 3, padding=3, dilation=3, stride=stride, bias=False),
                                    norm_layer(planes),
                                    nn.ReLU()
                                    )
@@ -187,10 +187,10 @@ class Bottleneck(nn.Module):
         residual = self.skip(x)
 
         out = self.conv1(x)
-        dconv1 = self.dconv1(out)
+        # dconv1 = self.dconv1(out)
         dconv2 = self.dconv2(out)
         dconv3 = self.dconv3(out)
-        out =dconv1+dconv2+dconv3
+        out =dconv2+dconv3
         out = self.conv3(out)
 
         out = self.relu(out + residual)
