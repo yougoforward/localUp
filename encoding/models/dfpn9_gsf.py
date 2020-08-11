@@ -161,10 +161,10 @@ class Bottleneck(nn.Module):
                                     nn.ReLU())
         self.relu = nn.ReLU()
 
-        self.skip = nn.Sequential(
-                nn.Conv2d(inplanes, outplanes, kernel_size=1, stride=stride, bias=False),
-                norm_layer(outplanes),
-            )
+        # self.skip = nn.Sequential(
+        #         nn.Conv2d(inplanes, outplanes, kernel_size=1, stride=stride, bias=False),
+        #         norm_layer(outplanes),
+        #     )
         self.skip = nn.Sequential(
                 nn.Conv2d(inplanes, outplanes, kernel_size=3, padding=1, stride=stride, bias=False),
                 norm_layer(outplanes),
