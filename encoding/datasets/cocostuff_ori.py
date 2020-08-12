@@ -37,7 +37,6 @@ class CocostuffSegmentation(BaseDataset):
         if len(self.images) == 0:
             raise (RuntimeError("Found 0 images in subfolders of: \
                 " + root + "\n"))
-        self.mask_all = [Image.open(self.masks[index]) for index in range(len(self.masks))]
 
     def __getitem__(self, index):
         img = Image.open(self.images[index]).convert('RGB')
@@ -46,8 +45,7 @@ class CocostuffSegmentation(BaseDataset):
                 img = self.transform(img)
             return img, os.path.basename(self.images[index])
 
-        # mask = Image.open(self.masks[index])
-        mask = self.mask_all[index]
+        mask = Image.open(self.masks[index])
 
         # synchrosized transform
         if self.mode == 'train':
