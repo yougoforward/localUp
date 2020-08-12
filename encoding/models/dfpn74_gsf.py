@@ -99,6 +99,8 @@ class dfpn74_gsfHead(nn.Module):
                                    norm_layer(inter_channels),
                                    nn.ReLU(),
                                    )
+        self.pred_coarse = nn.Sequential(nn.Dropout2d(0.1), nn.Conv2d(inter_channels, out_channels, 1))
+
     def forward(self, c1,c2,c3,c4,c20,c30,c40, coarse):
         _,_, h,w = c2.size()
         # out4 = self.conv5(c4)
@@ -131,6 +133,7 @@ class dfpn74_gsfHead(nn.Module):
         out = self.gff(out)
         
         #class level 
+        coarse = self.pred_coarse(out)
         class_feat = self.clf(out, coarse) 
         out = torch.cat([out, class_feat, gp.expand_as(out)], dim=1)
 
@@ -239,7 +242,7 @@ class CLF_Module(nn.Module):
         """
         n,c,h,w = x.size()
         ncls = coarse.size()[1]
-        coarse = F.interpolate(coarse, (h,w), **self._up_kwargs)
+        # coarse = F.interpolate(coarse, (h,w), **self._up_kwargs)
         coarse = coarse.view(n, ncls, -1).permute(0,2,1)
         coarse_norm = F.softmax(coarse, dim=1)
         class_feat = torch.matmul(x.view(n,c,-1), coarse_norm) # n x c x ncls
