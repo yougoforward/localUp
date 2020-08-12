@@ -37,13 +37,13 @@ class CocostuffSegmentation(BaseDataset):
         if len(self.images) == 0:
             raise (RuntimeError("Found 0 images in subfolders of: \
                 " + root + "\n"))
-        self.mask_all = [Image.open(self.masks[index]) for index in range(len(self.masks))]
+
         mask_file = os.path.join(root, self.split+'.pth')
         print('mask_file:', mask_file)
         if os.path.exists(mask_file):
-            self.masks = torch.load(mask_file)
+            self.mask_all = torch.load(mask_file)
         else:
-            self.masks = self._preprocess(mask_file)
+            self.mask_all = self._preprocess(mask_file)
     del _preprocess(self, maskfile):
         masks = {}
         tbar = trange(len(self.masks))
