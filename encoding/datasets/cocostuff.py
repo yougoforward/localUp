@@ -45,7 +45,7 @@ class CocostuffSegmentation(BaseDataset):
         else:
             self.mask_all = self._preprocess(mask_file)
 
-    del _preprocess(self, mask_file):
+    def _preprocess(self, mask_file):
         masks = {}
         tbar = trange(len(self.masks))
         for i in tbar:
