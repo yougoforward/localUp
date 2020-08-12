@@ -73,6 +73,8 @@ from .dfpn72_gsf import *
 from .dfpn73_gsf import *
 from .dfpn74_gsf import *
 from .cfpn_gsf import *
+from .cfpn import *
+
 from .blur_detect import *
 from .blur_dfpn_gsf import *
 def get_segmentation_model(name, **kwargs):
@@ -150,6 +152,7 @@ def get_segmentation_model(name, **kwargs):
         'dfpn74_gsf': get_dfpn74_gsf,
 
         'cfpn_gsf': get_cfpn_gsf,
+        'cfpn': get_cfpn,
 
     }
     return models[name.lower()](**kwargs)
