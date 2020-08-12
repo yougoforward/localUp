@@ -42,7 +42,7 @@ class ADE20KSegmentation(BaseDataset):
         masks = {}
         tbar = trange(len(self.masks))
         for i in tbar:
-            mask = Image.open(self.masks)
+            mask = Image.open(self.masks[i])
             masks[i] = mask
             tbar.set_description("Preprocessing masks {}".format(i))
         torch.save(masks, mask_file)
