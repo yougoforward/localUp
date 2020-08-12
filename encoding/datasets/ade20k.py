@@ -12,7 +12,7 @@ import torch
 from PIL import Image
 from .base import BaseDataset
 from tqdm import trange
-
+import cv2
 class ADE20KSegmentation(BaseDataset):
     BASE_DIR = 'ADEChallengeData2016'
     NUM_CLASS = 150
@@ -42,7 +42,7 @@ class ADE20KSegmentation(BaseDataset):
         masks = {}
         tbar = trange(len(self.masks))
         for i in tbar:
-            mask = Image.open(self.masks[i])
+            mask = cv2.imread(self.masks[i])
             masks[i] = mask
             tbar.set_description("Preprocessing masks {}".format(i))
         torch.save(masks, mask_file)

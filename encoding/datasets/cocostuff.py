@@ -18,6 +18,7 @@ import re
 from tqdm import tqdm, trange
 from .base import BaseDataset
 
+import cv2
 
 class CocostuffSegmentation(BaseDataset):
     BASE_DIR = 'cocostuff'
@@ -49,7 +50,7 @@ class CocostuffSegmentation(BaseDataset):
         masks = {}
         tbar = trange(len(self.masks))
         for i in tbar:
-            mask = Image.open(self.masks[i])
+            mask = cv2.imread(self.masks[i])
             masks[i] = mask
             tbar.set_description("Preprocessing masks {}".format(i))
         torch.save(masks, mask_file)
