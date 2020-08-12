@@ -123,7 +123,7 @@ class dfpn4_gsfHead(nn.Module):
         cp = [p2_1,p2_8,p3_1,p3_8,p4_1,p4_8]
         cat = torch.cat(cp, dim=1)
         s_att_list = torch.split(self.scale_att(cat),1, dim=1)
-        out = self.project(torch.cat([cp[i]*s_att_list[i] for i in range(len(cp))], dim=1))
+        out = self.project(torch.cat([(1+cp[i])*s_att_list[i] for i in range(len(cp))], dim=1))
         #gp
         gp = self.gap(c4)        
         # se
