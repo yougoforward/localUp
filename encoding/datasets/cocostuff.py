@@ -50,7 +50,7 @@ class CocostuffSegmentation(BaseDataset):
         masks = {}
         tbar = trange(len(self.masks))
         for i in tbar:
-            mask = Image.fromarray(cv2.imread(self.masks[i]))
+            mask = Image.fromarray(cv2.imread(self.masks[i], cv2.IMREAD_GRAYSCALE))
             masks[i] = mask
             tbar.set_description("Preprocessing masks {}".format(i))
         torch.save(masks, mask_file)
