@@ -97,7 +97,7 @@ class dfpn4_gsfHead(nn.Module):
                                    nn.ReLU(),
                                    )
         self.scale_att = nn.Sequential(
-                                   nn.Conv2d(6*inter_channels, 6, 1, padding=0, dilation=1, bias=False),
+                                   nn.Conv2d(6*inter_channels, 6, 1, padding=0, dilation=1, groups=6, bias=False),
                                    nn.Sigmoid()
                                    )
     def forward(self, c1,c2,c3,c4,c20,c30,c40):
