@@ -11,7 +11,8 @@ import torch
 
 from PIL import Image
 from .base import BaseDataset
-
+from tqdm import trange
+import cv2
 class ADE20KSegmentation(BaseDataset):
     BASE_DIR = 'ADEChallengeData2016'
     NUM_CLASS = 150
@@ -30,13 +31,31 @@ class ADE20KSegmentation(BaseDataset):
             raise(RuntimeError("Found 0 images in subfolders of: \
                 " + root + "\n"))
 
+        mask_file = os.path.join(root, self.split+'.pth')
+        print('mask_file:', mask_file)
+        if os.path.exists(mask_file):
+            self.mask_all = torch.load(mask_file)
+        else:
+            self.mask_all = self._preprocess(mask_file)
+
+    def _preprocess(self, mask_file):
+        masks = {}
+        tbar = trange(len(self.masks))
+        for i in tbar:
+            mask = Image.fromarray(cv2.imread(self.masks[i],cv2.IMREAD_GRAYSCALE))
+            masks[i] = mask
+            tbar.set_description("Preprocessing masks {}".format(i))
+        torch.save(masks, mask_file)
+        return masks
+
     def __getitem__(self, index):
         img = Image.open(self.images[index]).convert('RGB')
         if self.mode == 'test':
             if self.transform is not None:
                 img = self.transform(img)
             return img, os.path.basename(self.images[index])
-        mask = Image.open(self.masks[index])
+        # mask = Image.open(self.masks[index])
+        mask = self.mask_all[index]
         # synchrosized transform
         if self.mode == 'train':
             img, mask = self._sync_transform(img, mask)

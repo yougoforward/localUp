@@ -15,10 +15,9 @@ import torch
 import torch.utils.data as data
 import torchvision.transforms as transform
 import re
-from tqdm import tqdm, trange
+from tqdm import tqdm
 from .base import BaseDataset
 
-import cv2
 
 class CocostuffSegmentation(BaseDataset):
     BASE_DIR = 'cocostuff'
@@ -39,23 +38,6 @@ class CocostuffSegmentation(BaseDataset):
             raise (RuntimeError("Found 0 images in subfolders of: \
                 " + root + "\n"))
 
-        mask_file = os.path.join(root, self.split+'.pth')
-        print('mask_file:', mask_file)
-        if os.path.exists(mask_file):
-            self.mask_all = torch.load(mask_file)
-        else:
-            self.mask_all = self._preprocess(mask_file)
-
-    def _preprocess(self, mask_file):
-        masks = {}
-        tbar = trange(len(self.masks))
-        for i in tbar:
-            mask = Image.fromarray(cv2.imread(self.masks[i], cv2.IMREAD_GRAYSCALE))
-            masks[i] = mask
-            tbar.set_description("Preprocessing masks {}".format(i))
-        torch.save(masks, mask_file)
-        return masks
-
     def __getitem__(self, index):
         img = Image.open(self.images[index]).convert('RGB')
         if self.mode == 'vis':
@@ -63,8 +45,7 @@ class CocostuffSegmentation(BaseDataset):
                 img = self.transform(img)
             return img, os.path.basename(self.images[index])
 
-        # mask = Image.open(self.masks[index])
-        mask = self.mask_all[index]
+        mask = Image.open(self.masks[index])
 
         # synchrosized transform
         if self.mode == 'train':
