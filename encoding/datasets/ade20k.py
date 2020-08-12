@@ -45,6 +45,7 @@ class ADE20KSegmentation(BaseDataset):
             masks[i] = mask
             tbar.set_description("Preprocessing masks {}".format(i))
         torch.save(masks, mask_file)
+        return masks
 
     def __getitem__(self, index):
         img = Image.open(self.images[index]).convert('RGB')
