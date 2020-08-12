@@ -11,6 +11,7 @@ import torch
 
 from PIL import Image
 from .base import BaseDataset
+from tqdm import trange
 
 class ADE20KSegmentation(BaseDataset):
     BASE_DIR = 'ADEChallengeData2016'
