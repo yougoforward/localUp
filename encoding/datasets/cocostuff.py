@@ -44,10 +44,11 @@ class CocostuffSegmentation(BaseDataset):
             self.mask_all = torch.load(mask_file)
         else:
             self.mask_all = self._preprocess(mask_file)
-    del _preprocess(self, maskfile):
+
+    del _preprocess(self, mask_file):
         masks = {}
         tbar = trange(len(self.masks))
-        for i in tbar:i
+        for i in tbar:
             mask = Image.open(self.masks)
             masks[i] = mask
             tbar.set_description("Preprocessing masks {}".format(i))
