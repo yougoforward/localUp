@@ -96,8 +96,8 @@ class cfpnHead(nn.Module):
                                    norm_layer(256),
                                    nn.ReLU(),
                                    )
-        self.project = nn.Sequential(nn.Conv2d(6*inter_channels, 256, 1, padding=0, dilation=1, bias=False),
-                                   norm_layer(256),
+        self.project = nn.Sequential(nn.Conv2d(6*inter_channels, inter_channels//2, 1, padding=0, dilation=1, bias=False),
+                                   norm_layer(inter_channels//2),
                                    nn.ReLU(),
                                    )
     def forward(self, c1,c2,c3,c4,c20,c30,c40):
