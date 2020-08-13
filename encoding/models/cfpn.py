@@ -45,15 +45,15 @@ class cfpnHead(nn.Module):
                                    nn.ReLU(),
                                    )
         self.gap = nn.Sequential(nn.AdaptiveAvgPool2d(1),
-                            nn.Conv2d(in_channels, 256, 1, bias=False),
-                            norm_layer(256),
+                            nn.Conv2d(in_channels, inter_channels, 1, bias=False),
+                            norm_layer(inter_channels),
                             nn.ReLU(True))
         self.se = nn.Sequential(
-                            nn.Conv2d(256, 256, 1, bias=True),
+                            nn.Conv2d(inter_channels, inter_channels, 1, bias=True),
                             nn.Sigmoid())
         self.gff = PAM_Module(in_dim=inter_channels, key_dim=inter_channels//8,value_dim=inter_channels,out_dim=inter_channels,norm_layer=norm_layer)
 
-        self.conv6 = nn.Sequential(nn.Dropout2d(0.1), nn.Conv2d(2*256, out_channels, 1))
+        self.conv6 = nn.Sequential(nn.Dropout2d(0.1), nn.Conv2d(2*inter_channels, out_channels, 1))
 
         self.localUp2=localUp2(256, 256, 256, norm_layer, up_kwargs)
         self.localUp3=localUp(512, inter_channels, inter_channels, norm_layer, up_kwargs)
@@ -92,6 +92,10 @@ class cfpnHead(nn.Module):
                                    norm_layer(inter_channels),
                                    nn.ReLU(),
                                    )
+        self.project2 = nn.Sequential(nn.Conv2d(2*inter_channels, 256, 1, padding=0, dilation=1, bias=False),
+                                   norm_layer(256),
+                                   nn.ReLU(),
+                                   )
         self.project = nn.Sequential(nn.Conv2d(6*inter_channels, 256, 1, padding=0, dilation=1, bias=False),
                                    norm_layer(256),
                                    nn.ReLU(),
@@ -111,6 +115,9 @@ class cfpnHead(nn.Module):
         out2 = self.localUp3(c2, out3)
         p2_1 = self.dconv2_1(out2)
         p2_8 = self.dconv2_8(out2)
+        # out2 = self.project2(torch.cat([p2_1,p2_8], dim=1))
+        # #up 4
+        # out2 = self.localUp2(c1, out2)
 
         p4_1 = F.interpolate(p4_1, (h,w), **self._up_kwargs)
         p4_8 = F.interpolate(p4_8, (h,w), **self._up_kwargs)
@@ -118,8 +125,6 @@ class cfpnHead(nn.Module):
         p3_8 = F.interpolate(p3_8, (h,w), **self._up_kwargs)
         out = self.project(torch.cat([p2_1,p2_8,p3_1,p3_8,p4_1,p4_8], dim=1))
 
-        #up 4
-        out = self.localUp2(c1, out)
         #gp
         gp = self.gap(c4)        
         # se
