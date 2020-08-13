@@ -51,7 +51,7 @@ class cfpnHead(nn.Module):
         self.se = nn.Sequential(
                             nn.Conv2d(inter_channels, inter_channels, 1, bias=True),
                             nn.Sigmoid())
-        self.gff = PAM_Module(in_dim=inter_channels, key_dim=inter_channels//8,value_dim=inter_channels,out_dim=inter_channels,norm_layer=norm_layer)
+        self.gff = PAM_Module(in_dim=inter_channels, key_dim=64,value_dim=inter_channels,out_dim=inter_channels,norm_layer=norm_layer)
 
         self.conv6 = nn.Sequential(nn.Dropout2d(0.1), nn.Conv2d(2*inter_channels, out_channels, 1))
 
@@ -96,8 +96,8 @@ class cfpnHead(nn.Module):
                                    norm_layer(256),
                                    nn.ReLU(),
                                    )
-        self.project = nn.Sequential(nn.Conv2d(6*inter_channels, inter_channels//2, 1, padding=0, dilation=1, bias=False),
-                                   norm_layer(inter_channels//2),
+        self.project = nn.Sequential(nn.Conv2d(6*inter_channels, inter_channels, 1, padding=0, dilation=1, bias=False),
+                                   norm_layer(inter_channels),
                                    nn.ReLU(),
                                    )
     def forward(self, c1,c2,c3,c4,c20,c30,c40):
