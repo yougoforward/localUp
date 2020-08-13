@@ -96,16 +96,18 @@ class dfpn2Head(nn.Module):
                                    norm_layer(256),
                                    nn.ReLU(),
                                    )
-        self.gap2 = nn.Sequential(nn.AdaptiveAvgPool2d(1),
-                            nn.Conv2d(inter_channels, inter_channels//2, 1, bias=False),
-                            norm_layer(inter_channels//2),
-                            nn.ReLU(True))
+        self.project1 = nn.Sequential(nn.Conv2d(inter_channels+256, inter_channels, 1, padding=0, dilation=1, bias=False),
+                                   norm_layer(inter_channels),
+                                   nn.ReLU(),
+                                   )
         self.project = nn.Sequential(nn.Conv2d(6*inter_channels, inter_channels, 1, padding=0, dilation=1, bias=False),
                                    norm_layer(inter_channels),
                                    nn.ReLU(),
                                    )
     def forward(self, c1,c2,c3,c4,c20,c30,c40):
         _,_, h,w = c2.size()
+        _,_, hl,wl = c1.size()
+
         # out4 = self.conv5(c4)
         p4_1 = self.dconv4_1(c4)
         p4_8 = self.dconv4_8(c4)
@@ -119,7 +121,9 @@ class dfpn2Head(nn.Module):
         out2 = self.localUp3(c2, out3)
         p2_1 = self.dconv2_1(out2)
         p2_8 = self.dconv2_8(out2)
-
+        out2 = self.project2(torch.cat([p2_1,p2_8], dim=1))
+        #up 2
+        out2 = self.localUp2(c1, out2)
 
         p4_1 = F.interpolate(p4_1, (h,w), **self._up_kwargs)
         p4_8 = F.interpolate(p4_8, (h,w), **self._up_kwargs)
@@ -135,12 +139,8 @@ class dfpn2Head(nn.Module):
 
         #non-local
         # out = self.gff(out)
-        gp2 = self.gap2(gp)
-        out2 = self.project2(out)
-        # #up 4
-        out = self.localUp(c1, out2)
-
-        out = torch.cat([out, gp2.expand_as(out)], dim=1)
+        out =self.project1(torch.cat([F.interpolate(out, (hl,wl), **self._up_kwargs),out2], dim=1))
+        out = torch.cat([out, gp.expand_as(out)], dim=1)
 
         return self.conv6(out)
 
