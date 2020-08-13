@@ -92,7 +92,7 @@ class dfpn2Head(nn.Module):
                                    norm_layer(inter_channels),
                                    nn.ReLU(),
                                    )
-        self.project2 = nn.Sequential(nn.Conv2d(inter_channels, 256, 1, padding=0, dilation=1, bias=False),
+        self.project2 = nn.Sequential(nn.Conv2d(2*inter_channels, 256, 1, padding=0, dilation=1, bias=False),
                                    norm_layer(256),
                                    nn.ReLU(),
                                    )
