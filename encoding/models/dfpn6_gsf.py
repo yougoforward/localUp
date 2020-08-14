@@ -125,60 +125,51 @@ class dfpn6_gsfHead(nn.Module):
         out = out + se*out
 
         #non-local
-        out = self.gff(out)
+        # out = self.gff(out)
 
         out = torch.cat([out, gp.expand_as(out)], dim=1)
 
         return self.conv6(out)
 
+# class localUp(nn.Module):
+#     def __init__(self, in_channels, out_channels, norm_layer, up_kwargs):
+#         super(localUp, self).__init__()
+#         self.connect = nn.Sequential(nn.Conv2d(in_channels, out_channels, 1, padding=0, dilation=1, bias=False),
+#                                    norm_layer(out_channels),
+#                                    nn.ReLU())
+
+#         self._up_kwargs = up_kwargs
+#         self.refine = nn.Sequential(nn.Conv2d(2*out_channels, out_channels, 3, padding=1, dilation=1, bias=False),
+#                                    norm_layer(out_channels),
+#                                    nn.ReLU(),
+#                                     )
+
+#     def forward(self, c1,c2):
+#         n,c,h,w =c1.size()
+#         c1 = self.connect(c1) # n, 64, h, w
+#         c2 = F.interpolate(c2, (h,w), **self._up_kwargs)
+#         out = torch.cat([c1,c2], dim=1)
+#         out = self.refine(out)
+#         return out
 class localUp(nn.Module):
     def __init__(self, in_channels, out_channels, norm_layer, up_kwargs):
         super(localUp, self).__init__()
         self.connect = nn.Sequential(nn.Conv2d(in_channels, out_channels, 1, padding=0, dilation=1, bias=False),
                                    norm_layer(out_channels),
+                                   nn.ReLU(),
+                                   nn.Conv2d(out_channels, out_channels, 3, padding=1, dilation=1, bias=False),
+                                   norm_layer(out_channels),
                                    nn.ReLU())
 
         self._up_kwargs = up_kwargs
 
-        self.w31 = nn.Parameter(torch.empty(3*3))
-        nn.init.normal_(self.w31)
-        self.w32 = nn.Parameter(torch.empty(3*3))
-        nn.init.normal_(self.w32)
-        self.w5 = nn.Parameter(torch.empty(5*5))
-        nn.init.normal_(self.w5)
-        self.bn_relu1 = nn.Sequential(norm_layer(out_channels),
-                                   nn.ReLU())
-        self.bn_relu2 = nn.Sequential(norm_layer(out_channels),
-                                   nn.ReLU())
-        self.refine = nn.Sequential(nn.Conv2d(2*out_channels, out_channels, 1, padding=0, dilation=1, bias=False),
-                                   norm_layer(out_channels),
-                                   nn.ReLU(),
-                                    )
-        self.out_chs = out_channels
 
     def forward(self, c1,c2):
         n,c,h,w =c1.size()
         c1 = self.connect(c1) # n, 64, h, w
         c2 = F.interpolate(c2, (h,w), **self._up_kwargs)
-        #
-        unfold_c13 = F.unfold(c1, kernel_size=3, padding=1)
-        c1_w3 = torch.matmul(unfold_c13.view(n, self.out_chs, 3*3, h*w).permute(0,1,3,2), self.w31)
-        # unfold_c15 = F.unfold(c1, kernel_size=5, padding=2)
-        # c1_w5 = torch.matmul(unfold_c15.view(n, c, 5*5, h*w).permute(0,1,3,2), self.w5)
-        c1 = c1_w3.view(n,self.out_chs,h,w)
-        # c1 = (c1_w3+c1_w5).view(n,c,h,w)
-        c1 = self.bn_relu1(c1)
-
-        # unfold_c23 = F.unfold(c2, kernel_size=3, padding=1)
-        # c2_w3 = torch.matmul(unfold_c23.view(n, self.out_chs, 3*3, h*w).permute(0,1,3,2), self.w32)
-        # c2 = c2_w3.view(n,self.out_chs,h,w)
-        # c2 = self.bn_relu2(c2)
-
-
-        out = torch.cat([c1,c2], dim=1)
-        out = self.refine(out)
+        out = c1+c2
         return out
-
 class Bottleneck(nn.Module):
     """ResNet Bottleneck
     """

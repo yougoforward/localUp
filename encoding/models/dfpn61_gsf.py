@@ -125,7 +125,7 @@ class dfpn61_gsfHead(nn.Module):
         out = out + se*out
 
         #non-local
-        out = self.gff(out)
+        # out = self.gff(out)
 
         out = torch.cat([out, gp.expand_as(out)], dim=1)
 
@@ -139,33 +139,15 @@ class localUp(nn.Module):
                                    nn.ReLU())
 
         self._up_kwargs = up_kwargs
-
-        self.w3 = nn.Parameter(torch.empty(3*3))
-        nn.init.normal_(self.w3)
-
-        self.w5 = nn.Parameter(torch.empty(5*5))
-        nn.init.normal_(self.w5)
-
-        self.refine = nn.Sequential(nn.Conv2d(2*out_channels, out_channels, 1, padding=0, dilation=1, bias=False),
+        self.refine = nn.Sequential(nn.Conv2d(2*out_channels, out_channels, 3, padding=1, dilation=1, bias=False),
                                    norm_layer(out_channels),
                                    nn.ReLU(),
                                     )
-        self.out_chs = out_channels
 
     def forward(self, c1,c2):
         n,c,h,w =c1.size()
         c1 = self.connect(c1) # n, 64, h, w
         c2 = F.interpolate(c2, (h,w), **self._up_kwargs)
-        # 
-        # unfold_c13 = F.unfold(c1, kernel_size=3, padding=1)
-        # c1_w3 = torch.matmul(unfold_c13.view(n, self.out_chs, 3*3, h*w).permute(0,1,3,2), self.w3)
-        # c1 = c1_w3.view(n,self.out_chs,h,w)
-
-        unfold_c15 = F.unfold(c1, kernel_size=5, padding=2)
-        c1_w5 = torch.matmul(unfold_c15.view(n, self.out_chs, 5*5, h*w).permute(0,1,3,2), self.w5)
-        c1 = c1_w5.view(n,self.out_chs,h,w)
-        # c1 = (c1_w3+c1_w5).view(n,c,h,w)
-
         out = torch.cat([c1,c2], dim=1)
         out = self.refine(out)
         return out
