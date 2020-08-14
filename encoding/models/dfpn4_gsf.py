@@ -124,7 +124,7 @@ class dfpn4_gsfHead(nn.Module):
         p4 = F.interpolate(self.project4_2(p4), (h,w), **self._up_kwargs)
         p3 = F.interpolate(self.project3_2(p3), (h,w), **self._up_kwargs)
         p2 = self.project2_2(p2)
-        out = self.p2+p3+p4
+        out = p2+p3+p4
         out = self.bn_relu(out)
         #gp
         gp = self.gap(c4)        
