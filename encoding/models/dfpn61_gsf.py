@@ -100,7 +100,9 @@ class dfpn61_gsfHead(nn.Module):
                                    norm_layer(inter_channels),
                                    nn.ReLU(),
                                    )
-        self.project2_2 = nn.Sequential(nn.Conv2d(inter_channels, inter_channels, 1, padding=0, dilation=1, bias=False),
+        self.project = nn.Sequential(nn.Conv2d(3*inter_channels, inter_channels, 1, padding=0, dilation=1, bias=False),
+        norm_layer(inter_channels),
+                                   nn.ReLU()
                                    )
         self.bn_relu = nn.Sequential(norm_layer(inter_channels),
                                    nn.ReLU())
@@ -121,11 +123,9 @@ class dfpn61_gsfHead(nn.Module):
         p2_8 = self.dconv2_8(out2)
         p2 = p2_1+p2_8
         # out1 = self.localUp2(c1, self.project2_1(p2))
-        p4 = F.interpolate(self.project4_2(p4), (h,w), **self._up_kwargs)
-        p3 = F.interpolate(self.project3_2(p3), (h,w), **self._up_kwargs)
-        p2 = self.project2_2(p2)
-        out = p2+p3+p4
-        out = self.bn_relu(out)
+        p4 = F.interpolate(p4, (h,w), **self._up_kwargs)
+        p3 = F.interpolate(p3, (h,w), **self._up_kwargs)
+        out = self.project(torch.cat([p2,p3,p4], dim=1))
         #gp
         gp = self.gap(c4)        
         # se
