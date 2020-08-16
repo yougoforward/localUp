@@ -86,26 +86,23 @@ class dfpn61_gsfHead(nn.Module):
                                    )
         self.project4_1 = nn.Sequential(nn.Conv2d(2*inter_channels, inter_channels, 1, padding=0, dilation=1, bias=False),
                                    norm_layer(inter_channels),
-                                   nn.ReLU(),
+                                   nn.ReLU()
                                    )
-        self.project4_2 = nn.Sequential(nn.Conv2d(2*inter_channels, inter_channels, 1, padding=0, dilation=1, bias=False),
+        self.project4_2 = nn.Sequential(nn.Conv2d(inter_channels, inter_channels, 1, padding=0, dilation=1, bias=False),
+                                   norm_layer(inter_channels),
+                                   nn.ReLU()
                                    )
         self.project3_1 = nn.Sequential(nn.Conv2d(2*inter_channels, inter_channels, 1, padding=0, dilation=1, bias=False),
                                    norm_layer(inter_channels),
-                                   nn.ReLU(),
+                                   nn.ReLU()
                                    )
-        self.project3_2 = nn.Sequential(nn.Conv2d(2*inter_channels, inter_channels, 1, padding=0, dilation=1, bias=False),
-                                   )
+        self.project3_2 = nn.Sequential(nn.Conv2d(inter_channels, inter_channels, 1, padding=0, dilation=1, bias=False),
+                                   norm_layer(inter_channels),
+                                   nn.ReLU())
         self.project2_1 = nn.Sequential(nn.Conv2d(2*inter_channels, inter_channels, 1, padding=0, dilation=1, bias=False),
                                    norm_layer(inter_channels),
                                    nn.ReLU(),
                                    )
-        self.project = nn.Sequential(nn.Conv2d(6*inter_channels, inter_channels, 1, padding=0, dilation=1, bias=False),
-        norm_layer(inter_channels),
-                                   nn.ReLU()
-                                   )
-        self.bn_relu = nn.Sequential(norm_layer(inter_channels),
-                                   nn.ReLU())
     def forward(self, c1,c2,c3,c4,c20,c30,c40):
         _,_, h,w = c2.size()
         _,_, h3,w3 = c3.size()
@@ -123,7 +120,7 @@ class dfpn61_gsfHead(nn.Module):
         p3 = self.project3_1(p3)
 
         p4 = F.interpolate(p4, (h3,w3), **self._up_kwargs)
-        p3 = p4+p3
+        p3 = self.project4_2(p4)+p3
 
         out2 = self.localUp3(c2, p3)
         p2_1 = self.dconv2_1(out2)
@@ -131,12 +128,9 @@ class dfpn61_gsfHead(nn.Module):
         p2 = torch.cat([p2_1,p2_8], 1)
         p2 = self.project2_1(p2)
         p3 = F.interpolate(p3, (h,w), **self._up_kwargs)
-        out = p2+p3
+        out = p2+self.project3_2(p3)
         out = self.conv5(out)
-        # out1 = self.localUp2(c1, self.project2_1(p2))
-        # p4 = F.interpolate(p4, (h,w), **self._up_kwargs)
-        # p3 = F.interpolate(p3, (h,w), **self._up_kwargs)
-        # out = self.project(torch.cat([p2,p3,p4], dim=1))
+
         #gp
         gp = self.gap(c4)        
         # se
