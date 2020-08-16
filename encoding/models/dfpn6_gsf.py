@@ -103,7 +103,10 @@ class dfpn6_gsfHead(nn.Module):
                                    norm_layer(inter_channels),
                                    nn.ReLU(),
                                    )
-
+        self.project2_2 = nn.Sequential(nn.Conv2d(inter_channels, inter_channels, 1, padding=0, dilation=1, bias=False),
+                                   norm_layer(inter_channels),
+                                   nn.ReLU(),
+                                   )
     def forward(self, c1,c2,c3,c4,c20,c30,c40):
         _,_, h,w = c2.size()
         _,_, h3,w3 = c3.size()
@@ -119,7 +122,6 @@ class dfpn6_gsfHead(nn.Module):
         p3_8 = self.dconv3_8(out3)
         p3 = torch.cat([p3_1,p3_8], 1)
         p3 = self.project3_1(p3)
-
         p4 = F.interpolate(p4, (h3,w3), **self._up_kwargs)
         p3 = self.project4_2(p4)+p3
 
@@ -129,8 +131,8 @@ class dfpn6_gsfHead(nn.Module):
         p2 = torch.cat([p2_1,p2_8], 1)
         p2 = self.project2_1(p2)
         p3 = F.interpolate(p3, (h,w), **self._up_kwargs)
-        out = p2+self.project3_2(p3)
-
+        p2 = p2+self.project3_2(p3)
+        out = self.project2_2(p2)
         #gp
         gp = self.gap(c4)        
         # se
