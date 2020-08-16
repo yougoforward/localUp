@@ -108,24 +108,34 @@ class dfpn6_gsfHead(nn.Module):
                                    nn.ReLU())
     def forward(self, c1,c2,c3,c4,c20,c30,c40):
         _,_, h,w = c2.size()
+        _,_, h3,w3 = c3.size()
         # out4 = self.conv5(c4)
         p4_1 = self.dconv4_1(c4)
         p4_8 = self.dconv4_8(c4)
         p4 = torch.cat([p4_1,p4_8], 1)
+        p4 = self.project4_1(p4)
 
-        out3 = self.localUp4(c3, self.project4_1(p4))
+
+        out3 = self.localUp4(c3, p4)
         p3_1 = self.dconv3_1(out3)
         p3_8 = self.dconv3_8(out3)
         p3 = torch.cat([p3_1,p3_8], 1)
+        p3 = self.project3_1(p3)
 
-        out2 = self.localUp3(c2, self.project3_1(p3))
+        p4 = F.interpolate(p4, (h3,w3), **self._up_kwargs)
+        p3 = p4+p3
+
+        out2 = self.localUp3(c2, p3)
         p2_1 = self.dconv2_1(out2)
         p2_8 = self.dconv2_8(out2)
         p2 = torch.cat([p2_1,p2_8], 1)
-        # out1 = self.localUp2(c1, self.project2_1(p2))
-        p4 = F.interpolate(p4, (h,w), **self._up_kwargs)
+        p2 = self.project2_1(p2)
         p3 = F.interpolate(p3, (h,w), **self._up_kwargs)
-        out = self.project(torch.cat([p2,p3,p4], dim=1))
+        out = p2+p3
+        # out1 = self.localUp2(c1, self.project2_1(p2))
+        # p4 = F.interpolate(p4, (h,w), **self._up_kwargs)
+        # p3 = F.interpolate(p3, (h,w), **self._up_kwargs)
+        # out = self.project(torch.cat([p2,p3,p4], dim=1))
         #gp
         gp = self.gap(c4)        
         # se
