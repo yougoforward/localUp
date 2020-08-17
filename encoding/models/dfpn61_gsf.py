@@ -74,11 +74,11 @@ class dfpn61_gsfHead(nn.Module):
 
         out3 = self.localUp4(c3, p4)
 
-        p3=self.context4(out3)
+        p3=self.context3(out3)
 
         out2 = self.localUp3(c2, p3)
 
-        p2=self.context4(out2)
+        p2=self.context2(out2)
 
         # out = self.localUp2(c1, p2)
         p4 = F.interpolate(self.project4(p4), (h3,w3), **self._up_kwargs)
