@@ -56,9 +56,9 @@ class dfpn61_gsfHead(nn.Module):
         self.localUp3=localUp(512, inter_channels, norm_layer, up_kwargs)
         self.localUp4=localUp(1024, inter_channels, norm_layer, up_kwargs)
 
-        self.context4 = self.Context(in_channels, inter_channels, inter_channels, 2, norm_layer)
-        self.context3 = self.Context(inter_channels, inter_channels, inter_channels, 4, norm_layer)
-        self.context2 = self.Context(inter_channels, inter_channels, inter_channels, 8, norm_layer)
+        self.context4 = Context(in_channels, inter_channels, inter_channels, 2, norm_layer)
+        self.context3 = Context(inter_channels, inter_channels, inter_channels, 4, norm_layer)
+        self.context2 = Context(inter_channels, inter_channels, inter_channels, 8, norm_layer)
 
         self.project4 = nn.Sequential(nn.Conv2d(inter_channels, inter_channels, 1, padding=0, dilation=1, bias=False),
                                    norm_layer(inter_channels),nn.ReLU())
