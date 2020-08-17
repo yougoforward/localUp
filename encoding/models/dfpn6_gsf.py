@@ -86,53 +86,57 @@ class dfpn6_gsfHead(nn.Module):
                                    )
         self.project4_1 = nn.Sequential(nn.Conv2d(2*inter_channels, inter_channels, 1, padding=0, dilation=1, bias=False),
                                    norm_layer(inter_channels),
-                                   nn.ReLU()
+                                   nn.ReLU(),
                                    )
-        self.project4_2 = nn.Sequential(nn.Conv2d(inter_channels, inter_channels, 1, padding=0, dilation=1, bias=False),
+        self.project4_2 = nn.Sequential(nn.Conv2d(2*inter_channels, inter_channels, 1, padding=0, dilation=1, bias=False),
                                    norm_layer(inter_channels),
-                                   nn.ReLU()
-                                   )
+                                   nn.ReLU())
         self.project3_1 = nn.Sequential(nn.Conv2d(2*inter_channels, inter_channels, 1, padding=0, dilation=1, bias=False),
                                    norm_layer(inter_channels),
-                                   nn.ReLU()
+                                   nn.ReLU(),
                                    )
-        self.project3_2 = nn.Sequential(nn.Conv2d(inter_channels, inter_channels, 1, padding=0, dilation=1, bias=False),
+        self.project3_2 = nn.Sequential(nn.Conv2d(2*inter_channels, inter_channels, 1, padding=0, dilation=1, bias=False),
                                    norm_layer(inter_channels),
                                    nn.ReLU())
         self.project2_1 = nn.Sequential(nn.Conv2d(2*inter_channels, inter_channels, 1, padding=0, dilation=1, bias=False),
                                    norm_layer(inter_channels),
                                    nn.ReLU(),
                                    )
-        self.project2_2 = nn.Sequential(nn.Conv2d(inter_channels, inter_channels, 1, padding=0, dilation=1, bias=False),
+        self.project2_2 = nn.Sequential(nn.Conv2d(2*inter_channels, inter_channels, 1, padding=0, dilation=1, bias=False),
                                    norm_layer(inter_channels),
                                    nn.ReLU(),
                                    )
+        self.project = nn.Sequential(nn.Conv2d(3*inter_channels, inter_channels, 1, padding=0, dilation=1, bias=False),
+                                   norm_layer(inter_channels),
+                                   nn.ReLU()
+                                   )
+        self.bn_relu = nn.Sequential()
     def forward(self, c1,c2,c3,c4,c20,c30,c40):
         _,_, h,w = c2.size()
-        _,_, h3,w3 = c3.size()
         # out4 = self.conv5(c4)
         p4_1 = self.dconv4_1(c4)
         p4_8 = self.dconv4_8(c4)
         p4 = torch.cat([p4_1,p4_8], 1)
-        p4 = self.project4_1(p4)
-
-
-        out3 = self.localUp4(c3, p4)
+        out4 = self.project4_1(p4)
+        out3 = self.localUp4(c3, out4)
         p3_1 = self.dconv3_1(out3)
         p3_8 = self.dconv3_8(out3)
         p3 = torch.cat([p3_1,p3_8], 1)
-        p3 = self.project3_1(p3)
-        p4 = F.interpolate(p4, (h3,w3), **self._up_kwargs)
-        p3 = self.project4_2(p4)+p3
-
-        out2 = self.localUp3(c2, p3)
+        out3 = self.project3_1(p3)
+        out2 = self.localUp3(c2, out3)
         p2_1 = self.dconv2_1(out2)
         p2_8 = self.dconv2_8(out2)
         p2 = torch.cat([p2_1,p2_8], 1)
-        p2 = self.project2_1(p2)
+        # out2 = self.project2_1(p2)
+        # out1 = self.localUp2(c1, self.project2_1(p2))
+        p2 = self.project2_2(p2)
+        p3 = self.project3_2(p3)
+        p4 = self.project4_2(p4)
+
+        p4 = F.interpolate(p4, (h,w), **self._up_kwargs)
         p3 = F.interpolate(p3, (h,w), **self._up_kwargs)
-        p2 = p2+self.project3_2(p3)
-        out = self.project2_2(p2)
+        out = self.project(torch.cat([p2,p3,p4], dim=1))
+        
         #gp
         gp = self.gap(c4)        
         # se
@@ -156,8 +160,9 @@ class localUp(nn.Module):
         self._up_kwargs = up_kwargs
         self.refine = nn.Sequential(nn.Conv2d(2*out_channels, out_channels, 3, padding=1, dilation=1, bias=False),
                                    norm_layer(out_channels),
-                                   nn.ReLU()
+                                   nn.ReLU(),
                                     )
+
     def forward(self, c1,c2):
         n,c,h,w =c1.size()
         c1 = self.connect(c1) # n, 64, h, w
@@ -165,7 +170,6 @@ class localUp(nn.Module):
         out = torch.cat([c1,c2], dim=1)
         out = self.refine(out)
         return out
-
 
 
 def get_dfpn6_gsf(dataset='pascal_voc', backbone='resnet50', pretrained=False,
