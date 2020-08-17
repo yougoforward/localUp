@@ -98,13 +98,13 @@ class Context(nn.Module):
     def __init__(self, in_channels, width, out_channels, dilation_base, norm_layer):
         super(Context, self).__init__()
         self.dconv0 = nn.Sequential(nn.Conv2d(in_channels, width, 1, padding=0, dilation=1, bias=False),
-                                   norm_layer(inter_channels), nn.ReLU())
+                                   norm_layer(width), nn.ReLU())
         self.dconv1 = nn.Sequential(nn.Conv2d(in_channels, width, 3, padding=dilation_base, dilation=dilation_base, bias=False),
-                                   norm_layer(inter_channels), nn.ReLU())
+                                   norm_layer(width), nn.ReLU())
         self.dconv2 = nn.Sequential(nn.Conv2d(in_channels, width, 3, padding=2*dilation_base, dilation=2*dilation_base, bias=False),
-                                   norm_layer(inter_channels), nn.ReLU())
+                                   norm_layer(width), nn.ReLU())
         self.dconv3 = nn.Sequential(nn.Conv2d(in_channels, width, 3, padding=4*dilation_base, dilation=4*dilation_base, bias=False),
-                                   norm_layer(inter_channels), nn.ReLU())
+                                   norm_layer(width), nn.ReLU())
         self.project = nn.Sequential(nn.Conv2d(4*width, out_channels, 1, padding=0, dilation=1, bias=False),
                                    norm_layer(out_channels), nn.ReLU())
     def forward(self, x):
