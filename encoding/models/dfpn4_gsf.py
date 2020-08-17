@@ -40,10 +40,6 @@ class dfpn4_gsfHead(nn.Module):
         self._up_kwargs = up_kwargs
 
         inter_channels = in_channels // 4
-        self.conv5 = nn.Sequential(nn.Conv2d(in_channels, inter_channels, 3, padding=1, bias=False),
-                                   norm_layer(inter_channels),
-                                   nn.ReLU(),
-                                   )
         self.gap = nn.Sequential(nn.AdaptiveAvgPool2d(1),
                             nn.Conv2d(in_channels, inter_channels, 1, bias=False),
                             norm_layer(inter_channels),
@@ -84,62 +80,34 @@ class dfpn4_gsfHead(nn.Module):
                                    norm_layer(inter_channels),
                                    nn.ReLU(),
                                    )
-        self.project4_1 = nn.Sequential(nn.Conv2d(2*inter_channels, inter_channels, 1, padding=0, dilation=1, bias=False),
+        self.project4 = nn.Sequential(nn.Conv2d(2*inter_channels, inter_channels, 1, padding=0, dilation=1, bias=False),
                                    norm_layer(inter_channels),
                                    nn.ReLU(),
                                    )
-        self.project4_2 = nn.Sequential(nn.Conv2d(2*inter_channels, inter_channels, 1, padding=0, dilation=1, bias=False),
-                                   norm_layer(inter_channels),
-                                   nn.ReLU())
-        self.project3_1 = nn.Sequential(nn.Conv2d(2*inter_channels, inter_channels, 1, padding=0, dilation=1, bias=False),
-                                   norm_layer(inter_channels),
-                                   nn.ReLU(),
-                                   )
-        self.project3_2 = nn.Sequential(nn.Conv2d(2*inter_channels, inter_channels, 1, padding=0, dilation=1, bias=False),
-                                   norm_layer(inter_channels),
-                                   nn.ReLU())
-        self.project2_1 = nn.Sequential(nn.Conv2d(2*inter_channels, inter_channels, 1, padding=0, dilation=1, bias=False),
-                                   norm_layer(inter_channels),
-                                   nn.ReLU(),
-                                   )
-        self.project2_2 = nn.Sequential(nn.Conv2d(2*inter_channels, inter_channels, 1, padding=0, dilation=1, bias=False),
+        self.project3 = nn.Sequential(nn.Conv2d(2*inter_channels, inter_channels, 1, padding=0, dilation=1, bias=False),
                                    norm_layer(inter_channels),
                                    nn.ReLU(),
                                    )
         self.project = nn.Sequential(nn.Conv2d(6*inter_channels, inter_channels, 1, padding=0, dilation=1, bias=False),
                                    norm_layer(inter_channels),
-                                   nn.ReLU()
+                                   nn.ReLU(),
                                    )
-        self.bn_relu = nn.Sequential()
     def forward(self, c1,c2,c3,c4,c20,c30,c40):
         _,_, h,w = c2.size()
-        # out4 = self.conv5(c4)
         p4_1 = self.dconv4_1(c4)
         p4_8 = self.dconv4_8(c4)
         p4 = torch.cat([p4_1,p4_8], 1)
-        out4 = self.project4_1(p4)
+        out4 = self.project4(p4)
         out3 = self.localUp4(c3, out4)
         p3_1 = self.dconv3_1(out3)
         p3_8 = self.dconv3_8(out3)
         p3 = torch.cat([p3_1,p3_8], 1)
-        out3 = self.project3_1(p3)
+        out3 = self.project3(p3)
         out2 = self.localUp3(c2, out3)
         p2_1 = self.dconv2_1(out2)
         p2_8 = self.dconv2_8(out2)
         p2 = torch.cat([p2_1,p2_8], 1)
-        # out2 = self.project2_1(p2)
-        # out1 = self.localUp2(c1, self.project2_1(p2))
-        # p2 = self.project2_2(p2)
-        # p3 = self.project3_2(p3)
-        # p4 = self.project4_2(p4)
 
-        # p4 = F.interpolate(p4, (h,w), **self._up_kwargs)
-        # p3 = F.interpolate(p3, (h,w), **self._up_kwargs)
-        # out = self.project(torch.cat([p2,p3,p4], dim=1))
-
-        p4_1,p4_8 = torch.split(p4,512, dim=1)
-        p3_1,p3_8 = torch.split(p3,512, dim=1)
-        p2_1,p2_8 = torch.split(p2,512, dim=1)
         p4_1 = F.interpolate(p4_1, (h,w), **self._up_kwargs)
         p4_8 = F.interpolate(p4_8, (h,w), **self._up_kwargs)
         p3_1 = F.interpolate(p3_1, (h,w), **self._up_kwargs)
