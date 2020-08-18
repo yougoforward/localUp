@@ -106,6 +106,7 @@ class dfpn7_gsfHead(nn.Module):
         out2 = self.localUp3(c2, out3)
         p2_1 = self.dconv2_1(out2)
         p2_8 = self.dconv2_8(out2)
+        
         p4_1 = F.interpolate(p4_1, (h,w), **self._up_kwargs)
         p4_8 = F.interpolate(p4_8, (h,w), **self._up_kwargs)
         p3_1 = F.interpolate(p3_1, (h,w), **self._up_kwargs)

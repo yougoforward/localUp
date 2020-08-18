@@ -96,17 +96,16 @@ class dfpn4_gsfHead(nn.Module):
         _,_, h,w = c2.size()
         p4_1 = self.dconv4_1(c4)
         p4_8 = self.dconv4_8(c4)
-        p4 = torch.cat([p4_1,p4_8], 1)
-        out4 = self.project4(p4)
+        out4 = self.project4(torch.cat([p4_1,p4_8], dim=1))
+
         out3 = self.localUp4(c3, out4)
         p3_1 = self.dconv3_1(out3)
         p3_8 = self.dconv3_8(out3)
-        p3 = torch.cat([p3_1,p3_8], 1)
-        out3 = self.project3(p3)
+        out3 = self.project3(torch.cat([p3_1,p3_8], dim=1))
+
         out2 = self.localUp3(c2, out3)
         p2_1 = self.dconv2_1(out2)
         p2_8 = self.dconv2_8(out2)
-        p2 = torch.cat([p2_1,p2_8], 1)
 
         p4_1 = F.interpolate(p4_1, (h,w), **self._up_kwargs)
         p4_8 = F.interpolate(p4_8, (h,w), **self._up_kwargs)
