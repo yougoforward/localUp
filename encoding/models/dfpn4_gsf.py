@@ -40,10 +40,6 @@ class dfpn4_gsfHead(nn.Module):
         self._up_kwargs = up_kwargs
 
         inter_channels = in_channels // 4
-        self.conv5 = nn.Sequential(nn.Conv2d(in_channels, inter_channels, 3, padding=1, bias=False),
-                                   norm_layer(inter_channels),
-                                   nn.ReLU(),
-                                   )
         self.gap = nn.Sequential(nn.AdaptiveAvgPool2d(1),
                             nn.Conv2d(in_channels, inter_channels, 1, bias=False),
                             norm_layer(inter_channels),
@@ -98,7 +94,6 @@ class dfpn4_gsfHead(nn.Module):
                                    )
     def forward(self, c1,c2,c3,c4,c20,c30,c40):
         _,_, h,w = c2.size()
-        # out4 = self.conv5(c4)
         p4_1 = self.dconv4_1(c4)
         p4_8 = self.dconv4_8(c4)
         out4 = self.project4(torch.cat([p4_1,p4_8], dim=1))
@@ -117,7 +112,6 @@ class dfpn4_gsfHead(nn.Module):
         p3_1 = F.interpolate(p3_1, (h,w), **self._up_kwargs)
         p3_8 = F.interpolate(p3_8, (h,w), **self._up_kwargs)
         out = self.project(torch.cat([p2_1,p2_8,p3_1,p3_8,p4_1,p4_8], dim=1))
-
         #gp
         gp = self.gap(c4)        
         # se
@@ -143,15 +137,12 @@ class localUp(nn.Module):
                                    norm_layer(out_channels),
                                    nn.ReLU()
                                     )
-        self.relu = nn.ReLU()                           
-
     def forward(self, c1,c2):
         n,c,h,w =c1.size()
         c1 = self.connect(c1) # n, 64, h, w
         c2 = F.interpolate(c2, (h,w), **self._up_kwargs)
         out = torch.cat([c1,c2], dim=1)
         out = self.refine(out)
-        # out = self.relu(c2+out)
         return out
 
 def get_dfpn4_gsf(dataset='pascal_voc', backbone='resnet50', pretrained=False,
