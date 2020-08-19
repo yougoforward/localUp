@@ -112,6 +112,7 @@ class dfpn7_gsfHead(nn.Module):
         p3_1 = F.interpolate(p3_1, (h,w), **self._up_kwargs)
         p3_8 = F.interpolate(p3_8, (h,w), **self._up_kwargs)
         out = self.project(torch.cat([p2_1,p2_8,p3_1,p3_8,p4_1,p4_8], dim=1))
+
         #gp
         gp = self.gap(c4)        
         # se
