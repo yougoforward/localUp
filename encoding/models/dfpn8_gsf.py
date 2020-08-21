@@ -59,30 +59,37 @@ class dfpn8_gsfHead(nn.Module):
         self.localUp3=localUp(512, inter_channels, norm_layer, up_kwargs)
         self.localUp4=localUp(1024, inter_channels, norm_layer, up_kwargs)
 
-        self.context4 = Context(inter_channels, inter_channels//2, inter_channels, 3, norm_layer)
-        self.context3 = Context(inter_channels, inter_channels//2, inter_channels, 6, norm_layer)
-        self.context2 = Context(inter_channels, inter_channels//2, inter_channels, 9, norm_layer)
+        self.context4 = Context(in_channels, inter_channels, inter_channels, 3, norm_layer)
+        self.context3 = Context(inter_channels, inter_channels, inter_channels, 6, norm_layer)
+        self.context2 = Context(inter_channels, inter_channels, inter_channels, 9, norm_layer)
 
-        self.project = nn.Sequential(nn.Conv2d(3*inter_channels, inter_channels, 1, padding=0, dilation=1, bias=False),
+        # self.project = nn.Sequential(nn.Conv2d(3*inter_channels, inter_channels, 1, padding=0, dilation=1, bias=False),
+        #                            norm_layer(inter_channels),
+        #                            nn.ReLU(),
+        #                            )
+        self.project = nn.Sequential(nn.Conv2d(12*inter_channels, inter_channels, 1, padding=0, dilation=1, bias=False),
                                    norm_layer(inter_channels),
                                    nn.ReLU(),
                                    )
     def forward(self, c1,c2,c3,c4,c20,c30,c40):
         _,_, h,w = c2.size()
-        out4 = self.conv5(c4)
-        p4=self.context4(out4)
+        # out4 = self.conv5(c4)
+        p4, cat4=self.context4(c4)
 
         out3 = self.localUp4(c3, p4)
-        p3=self.context3(out3)
+        p3, cat3=self.context3(out3)
 
         out2 = self.localUp3(c2, p3)
-        p2=self.context2(out2)
+        p2, cat2=self.context2(out2)
 
         # out = self.localUp2(c1, p2)
-        p4 = F.interpolate(p4, (h,w), **self._up_kwargs)
-        p3 = F.interpolate(p3, (h,w), **self._up_kwargs)
-        out = self.project(torch.cat([p2, p3, p4], dim=1))
+        # p4 = F.interpolate(p4, (h,w), **self._up_kwargs)
+        # p3 = F.interpolate(p3, (h,w), **self._up_kwargs)
+        # out = self.project(torch.cat([p2, p3, p4], dim=1))
 
+        cat4 = F.interpolate(cat4, (h,w), **self._up_kwargs)
+        cat3 = F.interpolate(cat3, (h,w), **self._up_kwargs)
+        out = self.project(torch.cat([cat2, cat3, cat4], dim=1))
         #gp
         gp = self.gap(c4)        
         # se
@@ -116,7 +123,7 @@ class Context(nn.Module):
         feat3 = self.dconv3(x)
         cat = torch.cat([feat0, feat1,feat2,feat3], dim=1)  
         out = self.project(cat)
-        return out
+        return out, cat
 
 class localUp(nn.Module):
     def __init__(self, in_channels, out_channels, norm_layer, up_kwargs):
