@@ -104,7 +104,7 @@ class dfpn4_gsfHead(nn.Module):
 
         return self.conv6(out)
 
-class PyramidPooling(Module):
+class PyramidPooling(nn.Module):
     """
     Reference:
         Zhao, Hengshuang, et al. *"Pyramid scene parsing network."*
