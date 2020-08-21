@@ -70,7 +70,7 @@ class dfpn8_gsfHead(nn.Module):
     def forward(self, c1,c2,c3,c4,c20,c30,c40):
         _,_, h,w = c2.size()
         out4 = self.conv5(c4)
-        p4=self.context4(c4)
+        p4=self.context4(out4)
 
         out3 = self.localUp4(c3, p4)
         p3=self.context3(out3)
