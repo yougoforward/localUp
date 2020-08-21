@@ -76,21 +76,21 @@ class dfpn8_gsfHead(nn.Module):
         p3=self.context3(out3)
 
         out2 = self.localUp3(c2, p3)
-        out=self.context2(out2)
+        p2=self.context2(out2)
 
         # out = self.localUp2(c1, p2)
-        # p4 = F.interpolate(p4, (h,w), **self._up_kwargs)
-        # p3 = F.interpolate(p3, (h,w), **self._up_kwargs)
-        # out = self.project(torch.cat([p2, p3, p4], dim=1))
+        p4 = F.interpolate(p4, (h,w), **self._up_kwargs)
+        p3 = F.interpolate(p3, (h,w), **self._up_kwargs)
+        out = self.project(torch.cat([p2, p3, p4], dim=1))
 
         #gp
         gp = self.gap(c4)        
         # se
-        # se = self.se(gp)
-        # out = out + se*out
+        se = self.se(gp)
+        out = out + se*out
 
         #non-local
-        # out = self.gff(out)
+        out = self.gff(out)
 
         out = torch.cat([out, gp.expand_as(out)], dim=1)
 
