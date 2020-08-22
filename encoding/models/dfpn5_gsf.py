@@ -40,6 +40,10 @@ class dfpn5_gsfHead(nn.Module):
         self._up_kwargs = up_kwargs
 
         inter_channels = in_channels // 4
+        self.conv5 = nn.Sequential(nn.Conv2d(in_channels, inter_channels, 3, padding=1, bias=False),
+                                   norm_layer(inter_channels),
+                                   nn.ReLU(),
+                                   )
         self.gap = nn.Sequential(nn.AdaptiveAvgPool2d(1),
                             nn.Conv2d(in_channels, inter_channels, 1, bias=False),
                             norm_layer(inter_channels),
@@ -120,7 +124,7 @@ class dfpn5_gsfHead(nn.Module):
         # out = out + se*out
         out = self.project(torch.cat([p2_1,p2_8,p3_1,p3_8,p4_1,p4_8,gp.expand_as(p2_1)], dim=1))
         #non-local
-        out = self.gff(out)
+        # out = self.gff(out)
 
         # out = torch.cat([out, gp.expand_as(out)], dim=1)
 
