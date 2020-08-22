@@ -41,15 +41,15 @@ class dfpn5_gsfHead(nn.Module):
 
         inter_channels = in_channels // 4
         self.gap = nn.Sequential(nn.AdaptiveAvgPool2d(1),
-                            nn.Conv2d(in_channels, 256, 1, bias=False),
-                            norm_layer(256),
+                            nn.Conv2d(in_channels, inter_channels, 1, bias=False),
+                            norm_layer(inter_channels),
                             nn.ReLU(True))
         self.se = nn.Sequential(
-                            nn.Conv2d(256, 256, 1, bias=True),
+                            nn.Conv2d(inter_channels, 256, 1, bias=True),
                             nn.Sigmoid())
         self.gff = PAM_Module(in_dim=256, key_dim=64,value_dim=256,out_dim=256,norm_layer=norm_layer)
 
-        self.conv6 = nn.Sequential(nn.Dropout2d(0.1), nn.Conv2d(2*256, out_channels, 1))
+        self.conv6 = nn.Sequential(nn.Dropout2d(0.1), nn.Conv2d(256, out_channels, 1))
 
         # self.localUp2=localUp(256, in_channels, norm_layer, up_kwargs)
         self.localUp3=localUp(512, inter_channels, norm_layer, up_kwargs)
@@ -88,7 +88,7 @@ class dfpn5_gsfHead(nn.Module):
                                    norm_layer(inter_channels),
                                    nn.ReLU(),
                                    )
-        self.project = nn.Sequential(nn.Conv2d(6*inter_channels, 256, 1, padding=0, dilation=1, bias=False),
+        self.project = nn.Sequential(nn.Conv2d(7*inter_channels, 256, 1, padding=0, dilation=1, bias=False),
                                    norm_layer(256),
                                    nn.ReLU(),
                                    )
@@ -111,18 +111,18 @@ class dfpn5_gsfHead(nn.Module):
         p4_8 = F.interpolate(p4_8, (h,w), **self._up_kwargs)
         p3_1 = F.interpolate(p3_1, (h,w), **self._up_kwargs)
         p3_8 = F.interpolate(p3_8, (h,w), **self._up_kwargs)
-        out = self.project(torch.cat([p2_1,p2_8,p3_1,p3_8,p4_1,p4_8], dim=1))
+        # out = self.project(torch.cat([p2_1,p2_8,p3_1,p3_8,p4_1,p4_8], dim=1))
 
         #gp
         gp = self.gap(c4)        
         # se
-        se = self.se(gp)
-        out = out + se*out
-
+        # se = self.se(gp)
+        # out = out + se*out
+        out = self.project(torch.cat([p2_1,p2_8,p3_1,p3_8,p4_1,p4_8,gp.expand_as(p2_1)], dim=1))
         #non-local
         out = self.gff(out)
 
-        out = torch.cat([out, gp.expand_as(out)], dim=1)
+        # out = torch.cat([out, gp.expand_as(out)], dim=1)
 
         return self.conv6(out)
 
