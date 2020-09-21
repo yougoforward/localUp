@@ -18,7 +18,7 @@ from .base import BaseDataset
 class ContextSegmentation60(BaseDataset):
     BASE_DIR = 'VOCdevkit/VOC2010'
     NUM_CLASS = 60
-    def __init__(self, root=os.path.expanduser('../../datasets/pcontext'), split='train',
+    def __init__(self, root=os.path.expanduser('./datasets/pcontext'), split='train',
                  mode=None, transform=None, target_transform=None, **kwargs):
         super(ContextSegmentation60, self).__init__(
             root, split, mode, transform, target_transform, **kwargs)
@@ -104,4 +104,4 @@ class ContextSegmentation60(BaseDataset):
 
     @property
     def pred_offset(self):
-        return 1
+        return 0
