@@ -42,22 +42,25 @@ class Focal_SegmentationLosses(CrossEntropyLoss):
             pred1, pred2, target = tuple(inputs)
             # *preds, target = tuple(inputs)
             # pred1, pred2 = tuple(preds[0])
-            valid = (target != self.ignore_index)
-            target_cp = target.clone()
-            target_cp[target_cp == self.ignore_index] = 0
-            n, c, h, w = pred2.size()
-            onehot_label = F.one_hot(target_cp, num_classes=self.nclass).float()
-            onehot_label = onehot_label.permute(0, 3, 1, 2)
-            ##focal loss
-            logit1 = F.softmax(pred1, dim=1)
-            loss1 = torch.sum(-F.log_softmax(pred1, 1)*onehot_label, dim=1)
-            pt1 = torch.sum(logit1*onehot_label, dim=1)
-            fl_weight1 = self.alpha*(1-pt1)**self.gamma
             
-            fl_loss1 = fl_weight1*loss1
-            fl_valid = (pt1>0.5)
-            loss1[fl_valid]=fl_loss1[fl_valid]
-            loss1 = torch.mean(loss1[valid])
+            # valid = (target != self.ignore_index)
+            # target_cp = target.clone()
+            # target_cp[target_cp == self.ignore_index] = 0
+            # n, c, h, w = pred2.size()
+            # onehot_label = F.one_hot(target_cp, num_classes=self.nclass).float()
+            # onehot_label = onehot_label.permute(0, 3, 1, 2)
+            # ##focal loss
+            # logit1 = F.softmax(pred1, dim=1)
+            # loss1 = torch.sum(-F.log_softmax(pred1, 1)*onehot_label, dim=1)
+            # pt1 = torch.sum(logit1*onehot_label, dim=1)
+            # fl_weight1 = self.alpha*(1-pt1)**self.gamma
+            
+            # fl_loss1 = fl_weight1*loss1
+            # # fl_valid = (pt1>0.5)
+            # # loss1[fl_valid]=fl_loss1[fl_valid]
+            # # loss1 = torch.mean(loss1[valid])
+            # loss1 = torch.mean(fl_loss1[valid])
+            
             # ##focal loss
             # logit2 = F.softmax(pred2, 1)
             # loss2 = torch.sum(-F.log_softmax(pred2, 1)*onehot_label, dim=1)
@@ -65,6 +68,7 @@ class Focal_SegmentationLosses(CrossEntropyLoss):
             # fl_weight2 = self.alpha*(1-pt2)**self.gamma
             # loss2 = fl_weight2*loss2
             # loss2 = torch.mean(loss2[valid])
+            loss1 = super(SegmentationLosses, self).forward(pred1, target)
             loss2 = super(SegmentationLosses, self).forward(pred2, target)
             return loss1 + self.aux_weight * loss2
         elif not self.aux:
