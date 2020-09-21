@@ -49,7 +49,7 @@ class Focal_SegmentationLosses(CrossEntropyLoss):
             onehot_label = F.one_hot(target_cp, num_classes=self.nclass).float()
             onehot_label = onehot_label.permute(0, 3, 1, 2)
             ##focal loss
-            logit1 = F.softmax(pred1, 1)
+            logit1 = F.softmax(pred1, dim=1)
             loss1 = torch.sum(-F.log_softmax(pred1, 1)*onehot_label, dim=1)
             pt1 = torch.sum(logit1*onehot_label, dim=1)
             fl_weight1 = self.alpha*(1-pt1)**self.gamma
