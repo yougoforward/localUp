@@ -143,7 +143,7 @@ class Trainer():
                                             nclass=self.nclass,
                                             se_weight=args.se_weight,
                                             aux_weight=args.aux_weight,
-                                            weight=class_balance_weight)
+                                            weight=None)
         self.model, self.optimizer = model, optimizer
         # using cuda
         if args.cuda:
