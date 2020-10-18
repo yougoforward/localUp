@@ -105,8 +105,10 @@ class CitySegmentation(BaseDataset):
         img = img.resize((ow, oh), Image.BILINEAR)
         mask = mask.resize((ow, oh), Image.NEAREST)
 
-        # # # random rotate
-        # img, mask = RandomRotation(img, mask, 10, is_continuous=False)
+        # random rotate -10~10, mask using NN rotate
+        deg = random.uniform(-10, 10)
+        img = img.rotate(deg, resample=Image.BILINEAR)
+        mask = mask.rotate(deg, resample=Image.NEAREST)
 
         # pad crop
         if short_size < crop_size:
@@ -120,10 +122,10 @@ class CitySegmentation(BaseDataset):
         y1 = random.randint(0, h - crop_size)
         img = img.crop((x1, y1, x1+crop_size, y1+crop_size))
         mask = mask.crop((x1, y1, x1+crop_size, y1+crop_size))
-        # # gaussian blur as in PSP
-        # if random.random() < 0.5:
-        #     img = img.filter(ImageFilter.GaussianBlur(
-        #         radius=random.random()))
+        # gaussian blur as in PSP
+        if random.random() < 0.5:
+            img = img.filter(ImageFilter.GaussianBlur(
+                radius=random.random()))
 
         # final transform
         return img, self._mask_transform(mask)
