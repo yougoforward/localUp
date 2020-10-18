@@ -17,7 +17,7 @@ datasets = {
     'pascal_aug': VOCAugSegmentation,
     'pcontext': ContextSegmentation,
     'pcontext60': ContextSegmentation60,
-    'cityscapes': CitySegmentation,
+    'citys': CitySegmentation,
     'cocostuff': CocostuffSegmentation,
     'focus_shi': Blur2Segmentation,
     'sea' : SeaSegmentation
