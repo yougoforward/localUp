@@ -148,8 +148,8 @@ class localUp2(nn.Module):
         # four adjacent point in src
         src_x_0 = torch.floor(src_x)
         src_y_0 = torch.floor(src_y)
-        src_x_1 = torch.where(src_x_0 + 1 < ws - 1, src_x_0 + 1, torch.tensor(float(ws) - 1).view(1,1))
-        src_y_1 = torch.where(src_y_0 + 1 < hs - 1, src_y_0 + 1, torch.tensor(float(hs) - 1).view(1,1))
+        src_x_1 = torch.where(src_x_0 + 1 < ws - 1, src_x_0 + 1, torch.tensor(ws - 1).view(1,1))
+        src_y_1 = torch.where(src_y_0 + 1 < hs - 1, src_y_0 + 1, torch.tensor(hs - 1).view(1,1))
         
         up_left = (src_y_0*hs+src_x_0).cuda()
         up_right = (src_y_1*hs+src_x_0).cuda()
