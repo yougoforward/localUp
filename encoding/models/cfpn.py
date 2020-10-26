@@ -140,7 +140,7 @@ class localUp2(nn.Module):
         scale_h = float(hs)/hd
         scale_w = float(ws)/wd
         
-        dest_Y, dest_X = torch.meshgrid(torch.range(hd), torch.range(wd))
+        dest_Y, dest_X = torch.meshgrid(torch.range(0,hd-1), torch.range(0,wd-1))
         # dest point in src
         src_y = (dest_Y+0.5)*scale_h-0.5
         src_x = (dest_X+0.5)*scale_w-0.5
