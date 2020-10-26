@@ -137,6 +137,8 @@ class localUp2(nn.Module):
         c2 = self.refine2(c2)
         _,_,hs,ws = c2.size()
         
+        print(hs)
+        
         scale_h = float(hs)/hd
         scale_w = float(ws)/wd
         
