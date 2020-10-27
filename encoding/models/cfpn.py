@@ -142,8 +142,8 @@ class localUp2(nn.Module):
         
         dest_X, dest_Y = torch.meshgrid(torch.arange(0,hd), torch.arange(0,wd))
         # dest point in src
-        src_y = (dest_Y+0.5)*scale_h-0.5
-        src_x = (dest_X+0.5)*scale_w-0.5
+        src_y = (dest_Y+0.5)*scale_w-0.5
+        src_x = (dest_X+0.5)*scale_h-0.5
         
         # four adjacent point in src
         src_x_0 = torch.floor(src_x).long().view(-1)
