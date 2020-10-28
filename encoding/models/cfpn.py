@@ -172,7 +172,8 @@ class localUp2(nn.Module):
         o3 = torch.index_select(out, 2, down_left)
         o4 = torch.index_select(out, 2, down_right)
         unfold_out = torch.stack([o1,o2,o3,o4], 3).permute(0,2,1,3)
-        out = torch.matmul(unfold_out, att.unsqueeze(3)).squeeze(3).permute(0,2,1).view(n,-1,hd,wd)
+        # out = torch.matmul(unfold_out, att.unsqueeze(3)).squeeze(3).permute(0,2,1).view(n,-1,hd,wd)
+        out = torch.mean(unfold_out, dim=3, keepdim=False).permute(0,2,1).view(n,-1,hd,wd)
         return out
     
 class localUp(nn.Module):
