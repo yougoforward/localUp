@@ -134,8 +134,8 @@ class localUp2(nn.Module):
 
     def forward(self, c1,c2,out):
         n,c,hd,wd = c1.size()
-        c1 = self.refine(c1)
-        c2 = self.refine2(c2)
+        # c1 = self.refine(c1)
+        # c2 = self.refine2(c2)
         _,_,hs,ws = c2.size()
                 
         scale_h = float(hs)/hd
