@@ -134,8 +134,8 @@ class localUp2(nn.Module):
 
     def forward(self, c1,c2,out):
         n,c,hd,wd = c1.size()
-        # c1 = self.refine(c1)
-        # c2 = self.refine2(c2)
+        c1 = self.refine(c1)
+        c2 = self.refine2(c2)
         _,_,hs,ws = c2.size()
                 
         scale_h = float(hs)/hd
@@ -158,19 +158,19 @@ class localUp2(nn.Module):
         down_left = (src_y_0*hs+src_x_1).cuda()
         down_right = (src_y_1*hs+src_x_1).cuda()
         
-        # c2 = c2.view(n, -1, hs*ws)
-        # t1 = torch.index_select(c2, 2, up_left)
-        # t2 = torch.index_select(c2, 2, up_right)
-        # t3 = torch.index_select(c2, 2, down_left)
-        # t4 = torch.index_select(c2, 2, down_right)
+        c2 = c2.view(n, -1, hs*ws)
+        t1 = torch.index_select(c2, 2, up_left)
+        t2 = torch.index_select(c2, 2, up_right)
+        t3 = torch.index_select(c2, 2, down_left)
+        t4 = torch.index_select(c2, 2, down_right)
         
-        # unfold_up_c2 = torch.stack([t1,t2,t3,t4], 3).permute(0,2,1,3)        
-        # # torch.nn.functional.unfold(input, kernel_size, dilation=1, padding=0, stride=1)
-        # energy = torch.matmul(c1.view(n, -1, hd*wd).permute(0,2,1).unsqueeze(2), unfold_up_c2).squeeze(2) #n,h*w,2x2
-        # att = torch.softmax(energy, dim=-1)
+        unfold_up_c2 = torch.stack([t1,t2,t3,t4], 3).permute(0,2,1,3)        
+        # torch.nn.functional.unfold(input, kernel_size, dilation=1, padding=0, stride=1)
+        energy = torch.matmul(c1.view(n, -1, hd*wd).permute(0,2,1).unsqueeze(2), unfold_up_c2).squeeze(2) #n,h*w,2x2
+        att = torch.softmax(energy, dim=-1)
         
-        energy = self.att(c1)
-        att =torch.softmax(energy, dim=1).view(n,4,-1).permute(0,2,1)
+        # energy = self.att(c1)
+        # att =torch.softmax(energy, dim=1).view(n,4,-1).permute(0,2,1)
         
         out = out.view(n, -1, hs*ws)
         o1 = torch.index_select(out, 2, up_left)
