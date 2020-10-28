@@ -166,15 +166,15 @@ class localUp2(nn.Module):
         # energy = torch.matmul(c1.view(n, -1, hd*wd).permute(0,2,1).unsqueeze(2), unfold_up_c2).squeeze(2) #n,h*w,2x2
         # att = torch.softmax(energy, dim=-1)
         
-        # out = out.view(n, -1, hs*ws)
-        # o1 = torch.index_select(out, 2, up_left)
-        # o2 = torch.index_select(out, 2, up_right)
-        # o3 = torch.index_select(out, 2, down_left)
-        # o4 = torch.index_select(out, 2, down_right)
-        # unfold_out = torch.stack([o1,o2,o3,o4], 3).permute(0,2,1,3)
+        out = out.view(n, -1, hs*ws)
+        o1 = torch.index_select(out, 2, up_left)
+        o2 = torch.index_select(out, 2, up_right)
+        o3 = torch.index_select(out, 2, down_left)
+        o4 = torch.index_select(out, 2, down_right)
+        unfold_out = torch.stack([o1,o2,o3,o4], 3).permute(0,2,1,3)
         # out = torch.matmul(unfold_out, att.unsqueeze(3)).squeeze(3).permute(0,2,1).view(n,-1,hd,wd)
-        # out = torch.mean(unfold_out, dim=3, keepdim=False).permute(0,2,1).view(n,-1,hd,wd)
-        out = F.interpolate(out, (hd, wd), mode='bilinear', align_corners=True)
+        out = torch.mean(unfold_out, dim=3, keepdim=False).permute(0,2,1).view(n,-1,hd,wd)
+        # out = F.interpolate(out, (hd, wd), mode='bilinear', align_corners=True)
         return out
     
 class localUp(nn.Module):
