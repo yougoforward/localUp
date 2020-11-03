@@ -2,7 +2,7 @@
 # train
 python -m experiments.segmentation.train --dataset pcontext \
     --model cfpn --aux --base-size 520 --crop-size 520 \
-    --backbone resnet101 --checkname cfpn_res101_pcontext --batch-size 8
+    --backbone resnet101 --checkname cfpn_res101_pcontext --batch-size 16
 
 #test [single-scale]
 python -m experiments.segmentation.test_whole --dataset pcontext \
