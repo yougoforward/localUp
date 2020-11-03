@@ -148,12 +148,12 @@ class localUp2(nn.Module):
         
         dest_X, dest_Y = torch.meshgrid(torch.arange(0,hd), torch.arange(0,wd))
         # dest point in src
-        src_y = ((dest_Y+0.5)*scale_w-0.5).cuda()
-        src_x = ((dest_X+0.5)*scale_h-0.5).cuda()
+        src_y = ((dest_Y+0.5)*scale_w-0.5).view(-1).cuda()
+        src_x = ((dest_X+0.5)*scale_h-0.5).view(-1).cuda()
         
         # four adjacent point in src
-        src_x_0 = torch.floor(src_x).long().view(-1)
-        src_y_0 = torch.floor(src_y).long().view(-1)
+        src_x_0 = torch.floor(src_x).long()
+        src_y_0 = torch.floor(src_y).long()
         src_x_1 = torch.where(src_x_0 + 1 < hs - 1, src_x_0 + 1, torch.tensor(hs - 1).cuda())
         src_y_1 = torch.where(src_y_0 + 1 < ws - 1, src_y_0 + 1, torch.tensor(ws - 1).cuda())
         src_x_00 = torch.where(src_x_0>0, src_x_0, torch.tensor(0).cuda())
