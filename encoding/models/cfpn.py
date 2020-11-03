@@ -186,6 +186,7 @@ class localUp2(nn.Module):
         energy = torch.matmul(c1.view(n, -1, hd*wd).permute(0,2,1).unsqueeze(2), unfold_up_c2).squeeze(2) #n,h*w,2x2
         att = torch.softmax(energy, dim=-1)
         att = att*coef.expand_as(att)
+        att = F.normalize(att, p=1, dim=2)
         
         # energy = self.att(c1)
         # att =torch.softmax(energy, dim=1).view(n,4,-1).permute(0,2,1)
