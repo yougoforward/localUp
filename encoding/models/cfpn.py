@@ -184,7 +184,8 @@ class localUp2(nn.Module):
         unfold_up_c2 = torch.stack([t1,t2,t3,t4], 3).permute(0,2,1,3)        
         # torch.nn.functional.unfold(input, kernel_size, dilation=1, padding=0, stride=1)
         energy = torch.matmul(c1.view(n, -1, hd*wd).permute(0,2,1).unsqueeze(2), unfold_up_c2).squeeze(2) #n,h*w,2x2
-        att = torch.softmax(energy, dim=-1)
+        # att = torch.softmax(energy, dim=-1)
+        att = torch.sigmoid(energy)
         att = att*coef.expand_as(att)
         att = F.normalize(att, p=1, dim=2)
         
