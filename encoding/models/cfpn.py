@@ -154,21 +154,23 @@ class localUp2(nn.Module):
         # four adjacent point in src
         src_x_0 = torch.floor(src_x).long()
         src_y_0 = torch.floor(src_y).long()
-        src_x_1 = torch.where(src_x_0 + 1 < hs - 1, src_x_0 + 1, torch.tensor(hs - 1).cuda())
-        src_y_1 = torch.where(src_y_0 + 1 < ws - 1, src_y_0 + 1, torch.tensor(ws - 1).cuda())
+        src_x_1 = src_x_0 + 1
+        src_y_1 = src_y_0 + 1
+        
+        src_x_10 = torch.where(src_x_1 < hs - 1, src_x_1, torch.tensor(hs - 1).cuda())
+        src_y_10 = torch.where(src_y_1 < ws - 1, src_y_1, torch.tensor(ws - 1).cuda())
         src_x_00 = torch.where(src_x_0>0, src_x_0, torch.tensor(0).cuda())
         src_y_00 = torch.where(src_y_0>0, src_y_0, torch.tensor(0).cuda())
         up_left = (src_y_00*hs+src_x_00)
-        up_right = (src_y_1*hs+src_x_00)
-        down_left = (src_y_00*hs+src_x_1)
-        down_right = (src_y_1*hs+src_x_1)
+        up_right = (src_y_10*hs+src_x_00)
+        down_left = (src_y_00*hs+src_x_10)
+        down_right = (src_y_10*hs+src_x_10)
         
         #bilinear upsample coefficient
-        norm=((src_x_1-src_x_0)*(src_y_1-src_y_0)).float()
-        e1 = ((src_x-src_x_0)*(src_y-src_y_0)/norm)
-        e2 = ((src_x-src_x_0)*(src_y_1-src_y)/norm)
-        e3 = ((src_x_1-src_x)*(src_y-src_y_0)/norm)
-        e4 = ((src_x_1-src_x)*(src_y_1-src_y)/norm)
+        e1 = (src_x-src_x_0)*(src_y-src_y_0)
+        e2 = (src_x-src_x_0)*(src_y_1-src_y)
+        e3 = (src_x_1-src_x)*(src_y-src_y_0)
+        e4 = (src_x_1-src_x)*(src_y_1-src_y)
         
         coef = torch.stack([e1,e2,e3,e4], 1).unsqueeze(0)
         
