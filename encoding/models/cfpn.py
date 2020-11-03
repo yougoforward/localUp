@@ -21,6 +21,11 @@ class cfpn(BaseNet):
     def forward(self, x):
         imsize = x.size()[2:]
         c1, c2, c3, c4, c20, c30, c40 = self.base_forward(x)
+        print(c1.size())
+        print(c2.size())
+        print(c3.size())
+        print(c4.size())
+        print(self.crop_size)
         x = self.head(c1,c2,c3,c4, c20, c30, c40)
         x = F.interpolate(x, imsize, **self._up_kwargs)
         outputs = [x]
