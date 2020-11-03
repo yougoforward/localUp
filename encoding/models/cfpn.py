@@ -165,12 +165,12 @@ class localUp2(nn.Module):
         
         #bilinear upsample coefficient
         norm=((src_x_1-src_x_0)*(src_y_1-src_y_0)).float()
-        c1 = ((src_x-src_x_0)*(src_y-src_y_0)/norm)
-        c2 = ((src_x-src_x_0)*(src_y_1-src_y)/norm)
-        c3 = ((src_x_1-src_x)*(src_y-src_y_0)/norm)
-        c4 = ((src_x_1-src_x)*(src_y_1-src_y)/norm)
+        e1 = ((src_x-src_x_0)*(src_y-src_y_0)/norm)
+        e2 = ((src_x-src_x_0)*(src_y_1-src_y)/norm)
+        e3 = ((src_x_1-src_x)*(src_y-src_y_0)/norm)
+        e4 = ((src_x_1-src_x)*(src_y_1-src_y)/norm)
         
-        coef = torch.stack([c1,c2,c3,c4], 1).unsqueeze(0)
+        coef = torch.stack([e1,e2,e3,e4], 1).unsqueeze(0)
         
         
         c2 = c2.view(n, -1, hs*ws)
