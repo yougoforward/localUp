@@ -21,11 +21,11 @@ class cfpn(BaseNet):
     def forward(self, x):
         imsize = x.size()[2:]
         c1, c2, c3, c4, c20, c30, c40 = self.base_forward(x)
-        print(c1.size())
-        print(c2.size())
-        print(c3.size())
-        print(c4.size())
-        print(self.crop_size)
+        # print(c1.size())
+        # print(c2.size())
+        # print(c3.size())
+        # print(c4.size())
+        # print(self.crop_size)
         x = self.head(c1,c2,c3,c4, c20, c30, c40)
         x = F.interpolate(x, imsize, **self._up_kwargs)
         outputs = [x]
@@ -148,20 +148,30 @@ class localUp2(nn.Module):
         
         dest_X, dest_Y = torch.meshgrid(torch.arange(0,hd), torch.arange(0,wd))
         # dest point in src
-        src_y = (dest_Y+0.5)*scale_w-0.5
-        src_x = (dest_X+0.5)*scale_h-0.5
+        src_y = ((dest_Y+0.5)*scale_w-0.5).cuda()
+        src_x = ((dest_X+0.5)*scale_h-0.5).cuda()
         
         # four adjacent point in src
         src_x_0 = torch.floor(src_x).long().view(-1)
         src_y_0 = torch.floor(src_y).long().view(-1)
-        src_x_1 = torch.where(src_x_0 + 1 < hs - 1, src_x_0 + 1, torch.tensor(hs - 1))
-        src_y_1 = torch.where(src_y_0 + 1 < ws - 1, src_y_0 + 1, torch.tensor(ws - 1))
-        src_x_0 = torch.where(src_x_0>0, src_x_0, torch.tensor(0))
-        src_y_0 = torch.where(src_y_0>0, src_y_0, torch.tensor(0))
-        up_left = (src_y_0*hs+src_x_0).cuda()
-        up_right = (src_y_1*hs+src_x_0).cuda()
-        down_left = (src_y_0*hs+src_x_1).cuda()
-        down_right = (src_y_1*hs+src_x_1).cuda()
+        src_x_1 = torch.where(src_x_0 + 1 < hs - 1, src_x_0 + 1, torch.tensor(hs - 1).cuda())
+        src_y_1 = torch.where(src_y_0 + 1 < ws - 1, src_y_0 + 1, torch.tensor(ws - 1).cuda())
+        src_x_00 = torch.where(src_x_0>0, src_x_0, torch.tensor(0).cuda())
+        src_y_00 = torch.where(src_y_0>0, src_y_0, torch.tensor(0).cuda())
+        up_left = (src_y_00*hs+src_x_00)
+        up_right = (src_y_1*hs+src_x_00)
+        down_left = (src_y_00*hs+src_x_1)
+        down_right = (src_y_1*hs+src_x_1)
+        
+        #bilinear upsample coefficient
+        norm=((src_x_1-src_x_0)(src_y_1-src_y_0)).float()
+        c1 = ((src_x-src_x_0)(src_y-src_y_0)/norm)
+        c2 = ((src_x-src_x_0)(src_y_1-src_y)/norm)
+        c3 = ((src_x_1-src_x)(src_y-src_y_0)/norm)
+        c4 = ((src_x_1-src_x)(src_y_1-src_y)/norm)
+        
+        coef = torch.stack([c1,c2,c3,c4], 1).unsqueeze(0)
+        
         
         c2 = c2.view(n, -1, hs*ws)
         t1 = torch.index_select(c2, 2, up_left)
@@ -173,6 +183,7 @@ class localUp2(nn.Module):
         # torch.nn.functional.unfold(input, kernel_size, dilation=1, padding=0, stride=1)
         energy = torch.matmul(c1.view(n, -1, hd*wd).permute(0,2,1).unsqueeze(2), unfold_up_c2).squeeze(2) #n,h*w,2x2
         att = torch.softmax(energy, dim=-1)
+        att = att*coef.expand_as(att)
         
         # energy = self.att(c1)
         # att =torch.softmax(energy, dim=1).view(n,4,-1).permute(0,2,1)
