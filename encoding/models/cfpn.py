@@ -164,11 +164,11 @@ class localUp2(nn.Module):
         down_right = (src_y_1*hs+src_x_1)
         
         #bilinear upsample coefficient
-        norm=((src_x_1-src_x_0)(src_y_1-src_y_0)).float()
-        c1 = ((src_x-src_x_0)(src_y-src_y_0)/norm)
-        c2 = ((src_x-src_x_0)(src_y_1-src_y)/norm)
-        c3 = ((src_x_1-src_x)(src_y-src_y_0)/norm)
-        c4 = ((src_x_1-src_x)(src_y_1-src_y)/norm)
+        norm=((src_x_1-src_x_0)*(src_y_1-src_y_0)).float()
+        c1 = ((src_x-src_x_0)*(src_y-src_y_0)/norm)
+        c2 = ((src_x-src_x_0)*(src_y_1-src_y)/norm)
+        c3 = ((src_x_1-src_x)*(src_y-src_y_0)/norm)
+        c4 = ((src_x_1-src_x)*(src_y_1-src_y)/norm)
         
         coef = torch.stack([c1,c2,c3,c4], 1).unsqueeze(0)
         
