@@ -9,6 +9,12 @@ from ..utils import download, check_sha1
 __all__ = ['get_model_file', 'purge']
 
 _model_sha1 = {name: checksum for checksum, name in [
+     # resnest
+    ('fb9de5b360976e3e8bd3679d3e93c5409a5eff3c', 'resnest50'),
+    ('966fb78c22323b0c68097c5c1242bd16d3e07fd5', 'resnest101'),
+    ('d7fd712f5a1fcee5b3ce176026fbb6d0d278454a', 'resnest200'),
+    ('51ae5f19032e22af4ec08e695496547acdba5ce5', 'resnest269'),
+    
     ('ebb6acbbd1d1c90b7f446ae59d30bf70c74febc1', 'resnet50'),
     ('2a57e44de9c853fa015b172309a1ee7e2d0e4e2a', 'resnet101'),
     ('0d43d698c66aceaa2bc0309f55efdd7ff4b143af', 'resnet152'),
