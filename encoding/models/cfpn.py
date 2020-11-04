@@ -175,19 +175,20 @@ class localUp2(nn.Module):
         coef = torch.stack([e1,e2,e3,e4], 1).unsqueeze(0)
         
         
-        c2 = c2.view(n, -1, hs*ws)
-        t1 = torch.index_select(c2, 2, up_left)
-        t2 = torch.index_select(c2, 2, up_right)
-        t3 = torch.index_select(c2, 2, down_left)
-        t4 = torch.index_select(c2, 2, down_right)
+        # c2 = c2.view(n, -1, hs*ws)
+        # t1 = torch.index_select(c2, 2, up_left)
+        # t2 = torch.index_select(c2, 2, up_right)
+        # t3 = torch.index_select(c2, 2, down_left)
+        # t4 = torch.index_select(c2, 2, down_right)
         
-        unfold_up_c2 = torch.stack([t1,t2,t3,t4], 3).permute(0,2,1,3)        
-        # torch.nn.functional.unfold(input, kernel_size, dilation=1, padding=0, stride=1)
-        energy = torch.matmul(c1.view(n, -1, hd*wd).permute(0,2,1).unsqueeze(2), unfold_up_c2).squeeze(2) #n,h*w,2x2
-        # att = torch.softmax(energy, dim=-1)
-        att = torch.sigmoid(energy)
-        att = att*coef.expand_as(att)
-        att = F.normalize(att, p=1, dim=2)
+        # unfold_up_c2 = torch.stack([t1,t2,t3,t4], 3).permute(0,2,1,3)        
+        # # torch.nn.functional.unfold(input, kernel_size, dilation=1, padding=0, stride=1)
+        # energy = torch.matmul(c1.view(n, -1, hd*wd).permute(0,2,1).unsqueeze(2), unfold_up_c2).squeeze(2) #n,h*w,2x2
+        # # att = torch.softmax(energy, dim=-1)
+        # att = torch.sigmoid(energy)
+        # att = att*coef.expand_as(att)
+        # att = F.normalize(att, p=1, dim=2)
+        att = coef.expand(n,hd*wd,4)
         
         # energy = self.att(c1)
         # att =torch.softmax(energy, dim=1).view(n,4,-1).permute(0,2,1)
