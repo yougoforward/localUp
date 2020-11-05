@@ -20,7 +20,7 @@ class cfpn_gsf(BaseNet):
 
     def forward(self, x):
         imsize = x.size()[2:]
-        c1, c2, c3, c4 = self.base_forward(x)
+        c1, c2, c3, c4, c20, c30, c40 = self.base_forward(x)
         x = self.head(c1,c2,c3,c4)
         x = F.interpolate(x, imsize, **self._up_kwargs)
         outputs = [x]
