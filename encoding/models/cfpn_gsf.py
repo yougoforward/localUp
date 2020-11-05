@@ -168,13 +168,13 @@ class localUp2(nn.Module):
         key = self.key(c1) # n, 64, h, w
         query = self.query(c1)
 
-        unfold_up_key = unfold(key, 3, 2, 2, 1).permute(0,2,1).view(n, h*w, -1, 3*3)
+        unfold_up_key = F.unfold(key, 3, 2, 2, 1).permute(0,2,1).view(n, h*w, -1, 3*3)
         # torch.nn.functional.unfold(input, kernel_size, dilation=1, padding=0, stride=1)
         energy = torch.matmul(query.view(n, -1, h*w).permute(0,2,1).unsqueeze(2), unfold_up_key).squeeze(2) #n,h*w,3x3
         att = torch.softmax(energy, dim=-1)
         out = interpolate(out, (h,w), **self._up_kwargs)
         refine_out = self.val(out)
-        unfold_out = unfold(refine_out, 3, 2, 2, 1).permute(0,2,1).view(n, h*w, -1, 3*3)
+        unfold_out = F.unfold(refine_out, 3, 2, 2, 1).permute(0,2,1).view(n, h*w, -1, 3*3)
         refine_out = torch.matmul(unfold_out, att.unsqueeze(3)).squeeze(3).permute(0,2,1).view(n,-1,h,w)
         out = self.relu(out + self.project(refine_out))
         return out
