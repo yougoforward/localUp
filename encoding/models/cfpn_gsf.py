@@ -45,15 +45,15 @@ class cfpn_gsfHead(nn.Module):
         #                            nn.ReLU(),
         #                            )
         self.gap = nn.Sequential(nn.AdaptiveAvgPool2d(1),
-                            nn.Conv2d(in_channels, inter_channels, 1, bias=False),
-                            norm_layer(inter_channels),
+                            nn.Conv2d(in_channels, inter_channels//2, 1, bias=False),
+                            norm_layer(inter_channels//2),
                             nn.ReLU(True))
         self.se = nn.Sequential(
-                            nn.Conv2d(inter_channels, inter_channels, 1, bias=True),
+                            nn.Conv2d(inter_channels//2, inter_channels, 1, bias=True),
                             nn.Sigmoid())
-        self.gff = PAM_Module(in_dim=inter_channels, key_dim=inter_channels//8,value_dim=inter_channels,out_dim=inter_channels,norm_layer=norm_layer)
+        self.gff = PAM_Module(in_dim=inter_channels//2, key_dim=inter_channels//8,value_dim=inter_channels//2,out_dim=inter_channels//2,norm_layer=norm_layer)
 
-        self.conv6 = nn.Sequential(nn.Dropout2d(0.1), nn.Conv2d(2*inter_channels, out_channels, 1))
+        self.conv6 = nn.Sequential(nn.Dropout2d(0.1), nn.Conv2d(inter_channels, out_channels, 1))
 
         self.localUp3=localUp(512, inter_channels, norm_layer, up_kwargs)
         self.localUp4=localUp(1024, inter_channels, norm_layer, up_kwargs)
@@ -66,8 +66,8 @@ class cfpn_gsfHead(nn.Module):
                                    norm_layer(inter_channels), nn.ReLU())
         self.context2 = Context(inter_channels, inter_channels, inter_channels, 8, norm_layer)
 
-        self.project = nn.Sequential(nn.Conv2d(6*inter_channels, inter_channels, 1, padding=0, dilation=1, bias=False),
-                                   norm_layer(inter_channels),
+        self.project = nn.Sequential(nn.Conv2d(6*inter_channels, inter_channels//2, 1, padding=0, dilation=1, bias=False),
+                                   norm_layer(inter_channels//2),
                                    nn.ReLU(),
                                    )
         
@@ -151,14 +151,14 @@ class localUp2(nn.Module):
         
         self.query = nn.Sequential(nn.Conv2d(in_channels, self.key_dim, 1, padding=0, dilation=1, bias=True))
         self.key = nn.Sequential(nn.Conv2d(in_channels, self.key_dim, 1, padding=0, dilation=1, bias=True))
-        self.val = nn.Sequential(nn.Conv2d(out_channels, out_channels//4, 1, padding=0, dilation=1, bias=False),
-                                   norm_layer(out_channels//4),
-                                   nn.ReLU(),
-                                    )
-        self.project = nn.Sequential(nn.Conv2d(out_channels//4, out_channels, 1, padding=0, dilation=1, bias=False),
-                                   norm_layer(out_channels),
-                                    )
-        self.relu = nn.ReLU()
+        # self.val = nn.Sequential(nn.Conv2d(out_channels, out_channels//4, 1, padding=0, dilation=1, bias=False),
+        #                            norm_layer(out_channels//4),
+        #                            nn.ReLU(),
+        #                             )
+        # self.project = nn.Sequential(nn.Conv2d(out_channels//4, out_channels, 1, padding=0, dilation=1, bias=False),
+        #                            norm_layer(out_channels),
+        #                             )
+        # self.relu = nn.ReLU()
         self._up_kwargs = up_kwargs
 
 
@@ -173,10 +173,14 @@ class localUp2(nn.Module):
         energy = torch.matmul(query.view(n, -1, h*w).permute(0,2,1).unsqueeze(2), unfold_up_key).squeeze(2) #n,h*w,3x3
         att = torch.softmax(energy, dim=-1)
         out = F.interpolate(out, (h,w), **self._up_kwargs)
-        refine_out = self.val(out)
-        unfold_out = F.unfold(refine_out, 3, 2, 2, 1).permute(0,2,1).view(n, h*w, -1, 3*3)
-        refine_out = torch.matmul(unfold_out, att.unsqueeze(3)).squeeze(3).permute(0,2,1).view(n,-1,h,w)
-        out = self.relu(out + self.project(refine_out))
+        
+        unfold_out = F.unfold(out, 3, 2, 2, 1).permute(0,2,1).view(n, h*w, -1, 3*3)
+        out = torch.matmul(unfold_out, att.unsqueeze(3)).squeeze(3).permute(0,2,1).view(n,-1,h,w)
+        
+        # refine_out = self.val(out)
+        # unfold_out = F.unfold(refine_out, 3, 2, 2, 1).permute(0,2,1).view(n, h*w, -1, 3*3)
+        # refine_out = torch.matmul(unfold_out, att.unsqueeze(3)).squeeze(3).permute(0,2,1).view(n,-1,h,w)
+        # out = self.relu(out + self.project(refine_out))
         return out
 
 def get_cfpn_gsf(dataset='pascal_voc', backbone='resnet50', pretrained=False,
