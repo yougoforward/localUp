@@ -20,8 +20,8 @@ class cfpn_gsf(BaseNet):
 
     def forward(self, x):
         imsize = x.size()[2:]
-        c1, c2, c3, c4, c20, c30, c40 = self.base_forward(x)
-        x = self.head(c1,c2,c3,c4, c20, c30, c40)
+        c1, c2, c3, c4 = self.base_forward(x)
+        x = self.head(c1,c2,c3,c4)
         x = F.interpolate(x, imsize, **self._up_kwargs)
         outputs = [x]
         if self.aux:
@@ -70,7 +70,9 @@ class cfpn_gsfHead(nn.Module):
                                    norm_layer(inter_channels),
                                    nn.ReLU(),
                                    )
-    def forward(self, c1,c2,c3,c4, c20, c30, c40):
+        
+        self.localUp2 = localUp2(256, inter_channels, 256//8, norm_layer, up_kwargs)
+    def forward(self, c1,c2,c3,c4):
         _,_, h,w = c2.size()
         cat4, p4_1, p4_8=self.context4(c4)
         p4 = self.project4(cat4)
@@ -94,10 +96,9 @@ class cfpn_gsfHead(nn.Module):
         se = self.se(gp)
         out = out + se*out
         out = self.gff(out)
-
+        out = self.localUp2(c1, out)
         #
         out = torch.cat([out, gp.expand_as(out)], dim=1)
-
         return self.conv6(out)
 
 class Context(nn.Module):
@@ -143,7 +144,40 @@ class localUp(nn.Module):
         out = self.project2(out)
         out = self.relu(c2+out)
         return out
+class localUp2(nn.Module):
+    def __init__(self, in_channels, out_channels, key_dim, norm_layer, up_kwargs):
+        super(localUp, self).__init__()
+        self.key_dim = key_dim
+        
+        self.query = nn.Sequential(nn.Conv2d(in_channels, self.key_dim, 1, padding=0, dilation=1, bias=True))
+        self.key = nn.Sequential(nn.Conv2d(in_channels, self.key_dim, 1, padding=0, dilation=1, bias=True))
+        self.val = nn.Sequential(nn.Conv2d(out_channels, out_channels//4, 1, padding=0, dilation=1, bias=False),
+                                   norm_layer(out_channels//4),
+                                   nn.ReLU(),
+                                    )
+        self.project = nn.Sequential(nn.Conv2d(out_channels//4, out_channels, 1, padding=0, dilation=1, bias=False),
+                                   norm_layer(out_channels),
+                                    )
+        self.relu = nn.ReLU()
+        self._up_kwargs = up_kwargs
 
+
+
+    def forward(self, c1,out):
+        n,c,h,w =c1.size()
+        key = self.key(c1) # n, 64, h, w
+        query = self.query(c1)
+
+        unfold_up_key = unfold(key, 3, 1, 1, 1).permute(0,2,1).view(n, h*w, -1, 3*3)
+        # torch.nn.functional.unfold(input, kernel_size, dilation=1, padding=0, stride=1)
+        energy = torch.matmul(query.view(n, -1, h*w).permute(0,2,1).unsqueeze(2), unfold_up_key).squeeze(2) #n,h*w,3x3
+        att = torch.softmax(energy, dim=-1)
+        out = interpolate(out, (h,w), **self._up_kwargs)
+        refine_out = self.val(out)
+        unfold_out = unfold(refine_out, 3, 1, 1, 1).permute(0,2,1).view(n, h*w, -1, 3*3)
+        refine_out = torch.matmul(unfold_out, att.unsqueeze(3)).squeeze(3).permute(0,2,1).view(n,-1,h,w)
+        out = self.relu(out + self.project(refine_out))
+        return out
 
 def get_cfpn_gsf(dataset='pascal_voc', backbone='resnet50', pretrained=False,
                  root='~/.encoding/models', **kwargs):
