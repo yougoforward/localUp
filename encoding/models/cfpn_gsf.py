@@ -164,9 +164,9 @@ class localUp2(nn.Module):
         #                            norm_layer(out_channels//4),
         #                            nn.ReLU(),
         #                             )
-        # self.project = nn.Sequential(nn.Conv2d(out_channels//4, out_channels, 1, padding=0, dilation=1, bias=False),
-        #                            norm_layer(out_channels),
-        #                             )
+        self.att = nn.Sequential(nn.Conv2d(out_channels, 1, 1, padding=0, dilation=1, bias=True),
+                                   nn.Sigmoid()
+                                    )
         # self.relu = nn.ReLU()
         self._up_kwargs = up_kwargs
 
@@ -177,14 +177,15 @@ class localUp2(nn.Module):
         key = self.key(c1) # n, 64, h, w
         query = self.query(c1)
 
-        unfold_up_key = F.unfold(key, 3, 2, 2, 1).permute(0,2,1).view(n, h*w, -1, 3*3)
+        unfold_up_key = F.unfold(key, 3, 1, 1, 1).permute(0,2,1).view(n, h*w, -1, 3*3)
         # torch.nn.functional.unfold(input, kernel_size, dilation=1, padding=0, stride=1)
         energy = torch.matmul(query.view(n, -1, h*w).permute(0,2,1).unsqueeze(2), unfold_up_key).squeeze(2) #n,h*w,3x3
         att = torch.softmax(energy, dim=-1)
         out = F.interpolate(out, (h,w), **self._up_kwargs)
+        att = self.att(out)
+        unfold_out = F.unfold(out, 3, 1, 1, 1).permute(0,2,1).view(n, h*w, -1, 3*3)
+        out = att*torch.matmul(unfold_out, att.unsqueeze(3)).squeeze(3).permute(0,2,1).view(n,-1,h,w) + (1-att)*out
         
-        unfold_out = F.unfold(out, 3, 2, 2, 1).permute(0,2,1).view(n, h*w, -1, 3*3)
-        out = torch.matmul(unfold_out, att.unsqueeze(3)).squeeze(3).permute(0,2,1).view(n,-1,h,w)
         
         # refine_out = self.val(out)
         # unfold_out = F.unfold(refine_out, 3, 2, 2, 1).permute(0,2,1).view(n, h*w, -1, 3*3)
@@ -192,6 +193,53 @@ class localUp2(nn.Module):
         # out = self.relu(out + self.project(refine_out))
         return out
 
+class localUp3(nn.Module):
+    def __init__(self, in_channels, out_channels, key_dim, norm_layer, up_kwargs):
+        super(localUp3, self).__init__()
+        self.key_dim = key_dim
+        
+        self.query = nn.Sequential(nn.Conv2d(in_channels, self.key_dim, 1, padding=0, dilation=1, bias=True))
+        self.key = nn.Sequential(nn.Conv2d(in_channels, self.key_dim, 1, padding=0, dilation=1, bias=True))
+        # self.val = nn.Sequential(nn.Conv2d(out_channels, out_channels//4, 1, padding=0, dilation=1, bias=False),
+        #                            norm_layer(out_channels//4),
+        #                            nn.ReLU(),
+        #                             )
+        self.att = nn.Sequential(nn.Conv2d(out_channels, 1, 1, padding=0, dilation=1, bias=True),
+                                   nn.Sigmoid()
+                                    )
+        # self.relu = nn.ReLU()
+        self._up_kwargs = up_kwargs
+
+
+
+    def forward(self, c1,out):
+        n,c,h,w =c1.size()
+        key = self.key(c1) # n, 64, h, w
+        query = self.query(c1)
+
+        unfold_up_key = F.unfold(key, 3, 1, 1, 1).permute(0,2,1).view(n, h*w, -1, 3*3)
+        # torch.nn.functional.unfold(input, kernel_size, dilation=1, padding=0, stride=1)
+        energy = torch.matmul(query.view(n, -1, h*w).permute(0,2,1).unsqueeze(2), unfold_up_key).squeeze(2) #n,h*w,3x3
+        
+        # _, indices = torch.sort(energy, dim=-1, descending=True)
+        # index_2 = indices[:,:,1].unsqueeze(-1)
+        
+        
+        att = torch.softmax(energy, dim=-1)
+        out = F.interpolate(out, (h,w), **self._up_kwargs)
+        b_att = self.att(out)
+        unfold_out = F.unfold(out, 3, 1, 1, 1).permute(0,2,1).view(n, h*w, -1, 3*3)
+        out = b_att*torch.matmul(unfold_out, att.unsqueeze(3)).squeeze(3).permute(0,2,1).view(n,-1,h,w) + (1-b_att)*out
+        
+        # out = b_att*torch.gather(unfold_out, dim=-1, index=index_2).squeeze(3).permute(0,2,1).view(n,-1,h,w) + (1-b_att)*out
+        
+        
+        # refine_out = self.val(out)
+        # unfold_out = F.unfold(refine_out, 3, 2, 2, 1).permute(0,2,1).view(n, h*w, -1, 3*3)
+        # refine_out = torch.matmul(unfold_out, att.unsqueeze(3)).squeeze(3).permute(0,2,1).view(n,-1,h,w)
+        # out = self.relu(out + self.project(refine_out))
+        return out
+    
 def get_cfpn_gsf(dataset='pascal_voc', backbone='resnet50', pretrained=False,
                  root='~/.encoding/models', **kwargs):
     # infer number of classes
